@@ -9,8 +9,8 @@ export function TopNav() {
   const { isRunning, isDone } = useTimer();
 
   const navItems = [
-    { href: '/home',     label: 'Home',     icon: LayoutDashboard },
-    { href: '/focus',    label: 'Focus',    icon: Timer           },
+    { href: '/home',     label: 'Eisenhower', icon: LayoutDashboard },
+    { href: '/focus',    label: 'Pomodoro',   icon: Timer           },
     { href: '/trends',   label: 'Trends',   icon: BarChart2       },
     { href: '/settings', label: 'Settings', icon: Settings        },
   ];
