@@ -35,16 +35,17 @@ function getWeekDates(weekStartDay: 0 | 1, offset: number): string[] {
   });
 }
 
-function computeStreakDetails(dayPlans: DayPlan[]): {
+function computeStreakDetails(dayPlans: DayPlan[], activeDays: number[]): {
   streak: number;
   gapDays: number;
   lastActiveDaysAgo: number | null;
 } {
-  const active = new Set(
+  const plannedDates = new Set(
     dayPlans
       .filter(dp => dp.selectedPriorityIds.length > 0 || dp.zeroPriorityDay)
       .map(dp => dp.date)
   );
+  const activeDaySet = new Set(activeDays.length > 0 ? activeDays : [0,1,2,3,4,5,6]);
   const today = new Date();
   let streak = 0;
   let gapDays = 0;
@@ -55,16 +56,19 @@ function computeStreakDetails(dayPlans: DayPlan[]): {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const key = d.toISOString().split('T')[0];
+    const dow = d.getDay();
 
-    if (active.has(key)) {
+    if (!activeDaySet.has(dow)) continue;   // skip non-active days entirely
+
+    if (plannedDates.has(key)) {
       if (!foundFirst) { foundFirst = true; lastActiveDaysAgo = i; }
       streak++;
     } else {
       if (!foundFirst) {
-        if (i > 0) gapDays++;     // today empty doesn't count as gap
+        if (i > 0) gapDays++;
         if (gapDays > 60) break;
       } else {
-        break;                     // streak broken
+        break;
       }
     }
   }
@@ -141,9 +145,17 @@ export default function TrendsPage() {
     [weekDates, planByDate],
   );
 
+  const activeDaySet = useMemo(
+    () => new Set(activeDays.length > 0 ? activeDays : [0,1,2,3,4,5,6]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.settings?.activeDays],
+  );
+
   const { totalPlanned, totalCompleted, focusedDays, zeroDays } = useMemo(() => {
     let planned = 0, completed = 0, focused = 0, zero = 0;
     weekDates.forEach(d => {
+      const dow = new Date(d + 'T12:00:00').getDay();
+      if (!activeDaySet.has(dow)) return;        // skip non-active days in KPIs
       const dp = planByDate.get(d);
       if (!dp) return;
       if (dp.zeroPriorityDay && dp.selectedPriorityIds.length === 0) { zero++; return; }
@@ -153,7 +165,7 @@ export default function TrendsPage() {
       if (n >= 3 && n <= 5) focused++;
     });
     return { totalPlanned: planned, totalCompleted: completed, focusedDays: focused, zeroDays: zero };
-  }, [weekDates, planByDate]);
+  }, [weekDates, planByDate, activeDaySet]);
 
   const completionPct = totalPlanned > 0
     ? Math.round((totalCompleted / totalPlanned) * 100)
@@ -164,9 +176,12 @@ export default function TrendsPage() {
     [state.priorities],
   );
 
+  const activeDays: number[] = state.settings?.activeDays ?? [1, 2, 3, 4, 5];
+
   const { streak, gapDays, lastActiveDaysAgo } = useMemo(
-    () => computeStreakDetails(state.dayPlans),
-    [state.dayPlans],
+    () => computeStreakDetails(state.dayPlans, activeDays),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.dayPlans, state.settings?.activeDays],
   );
 
   const streakSubtitle = (() => {

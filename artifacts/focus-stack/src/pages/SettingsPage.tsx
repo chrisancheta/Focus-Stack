@@ -56,6 +56,7 @@ export default function SettingsPage() {
 
   const DEFAULT_SETTINGS = {
     weekStartDay: 1 as const,
+    activeDays: [1, 2, 3, 4, 5],
     reminderTimeLocal: '16:45',
     importanceWeight: 0.6,
     urgencyWeight: 0.4,
@@ -103,6 +104,42 @@ export default function SettingsPage() {
               <SelectItem value="1">Monday</SelectItem>
             </SelectContent>
           </Select>
+        </SettingRow>
+
+        <SettingRow label="Active days" description="Only these days count toward streak and stats">
+          <div className="flex gap-1">
+            {[
+              { label: 'S', dow: 0 },
+              { label: 'M', dow: 1 },
+              { label: 'T', dow: 2 },
+              { label: 'W', dow: 3 },
+              { label: 'T', dow: 4 },
+              { label: 'F', dow: 5 },
+              { label: 'S', dow: 6 },
+            ].map(({ label, dow }) => {
+              const active = (s.activeDays ?? [1,2,3,4,5]).includes(dow);
+              return (
+                <button
+                  key={dow}
+                  onClick={() => {
+                    const current = s.activeDays ?? [1,2,3,4,5];
+                    const next = active
+                      ? current.filter(d => d !== dow)
+                      : [...current, dow].sort();
+                    if (next.length > 0) handleChange('activeDays', next);
+                  }}
+                  className="w-7 h-7 rounded-lg text-[11px] font-semibold transition-all"
+                  style={{
+                    background: active ? '#222527' : 'rgba(255,255,255,0.45)',
+                    color: active ? 'white' : 'rgba(34,37,39,0.45)',
+                    border: active ? 'none' : '1px solid rgba(255,255,255,0.60)',
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </SettingRow>
 
         <SettingRow label="Daily check-in">

@@ -58,6 +58,7 @@ export interface WeeklySummary {
 
 export interface Settings {
   weekStartDay: 0 | 1;
+  activeDays: number[];        // day-of-week values that count (0=Sun … 6=Sat)
   reminderTimeLocal: string;
   importanceWeight: number;
   urgencyWeight: number;
