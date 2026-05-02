@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, X, Link2 } from 'lucide-react';
+import { ChevronDown, X, Link2, Coffee, Zap } from 'lucide-react';
 import { FocusTimerWidget } from '@/components/shared/FocusTimerWidget';
 import { useAppStore } from '@/lib/storeContext';
 import { useTimer } from '@/lib/timerContext';
@@ -7,7 +7,7 @@ import { getTodayISODate } from '@/lib/utils';
 
 export default function FocusPage() {
   const { state } = useAppStore();
-  const { linkedPriorityId, linkPriority, isRunning } = useTimer();
+  const { linkedPriorityId, linkPriority, isRunning, isDone } = useTimer();
   const [showPicker, setShowPicker] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -34,6 +34,14 @@ export default function FocusPage() {
     s => s.startedAt.slice(0, 10) === today
   );
 
+  // ── Pomodoro counter ────────────────────────────────────────────────────────
+  const completedCount  = todaySessions.length;
+  const setSize         = 4;
+  const positionInSet   = completedCount % setSize;          // 0-3
+  const completedSets   = Math.floor(completedCount / setSize);
+  const isLongBreakDue  = isDone && positionInSet === 0 && completedCount > 0;
+  const isShortBreakDue = isDone && positionInSet !== 0;
+
   const bucketLabel: Record<string, string> = {
     'must-do': 'Must do',
     'should-do': 'Should do',
@@ -43,6 +51,81 @@ export default function FocusPage() {
   return (
     <div className="flex flex-col items-center gap-6 py-4">
       <FocusTimerWidget />
+
+      {/* ── Pomodoro counter ────────────────────────────────────────────── */}
+      <div className="flex flex-col items-center gap-3">
+        {/* Session dots */}
+        <div className="flex items-center gap-2">
+          {Array.from({ length: setSize }).map((_, i) => {
+            const filled = i < positionInSet;
+            const isNext = i === positionInSet && !isDone;
+            return (
+              <span
+                key={i}
+                className="transition-all"
+                style={{
+                  display: 'block',
+                  width: filled ? 10 : isNext ? 8 : 7,
+                  height: filled ? 10 : isNext ? 8 : 7,
+                  borderRadius: '50%',
+                  background: filled
+                    ? '#222527'
+                    : isNext
+                      ? 'rgba(34,37,39,0.30)'
+                      : 'rgba(34,37,39,0.12)',
+                  border: isNext ? '1.5px solid rgba(34,37,39,0.35)' : 'none',
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Label */}
+        <p className="text-xs text-[#222527]/45 font-medium">
+          {completedCount === 0
+            ? 'Session 1 of 4'
+            : isLongBreakDue
+              ? `Set ${completedSets} done · ${completedCount} today`
+              : `Session ${positionInSet + 1} of 4 · ${completedCount} today`}
+        </p>
+
+        {/* Break suggestion — appears after timer completes */}
+        {(isShortBreakDue || isLongBreakDue) && (
+          <div
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-sm font-medium"
+            style={{
+              background: isLongBreakDue
+                ? 'rgba(107,143,110,0.14)'
+                : 'rgba(255,255,255,0.52)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+              border: isLongBreakDue
+                ? '1px solid rgba(107,143,110,0.28)'
+                : '1px solid rgba(255,255,255,0.65)',
+              color: isLongBreakDue ? '#4a7a4d' : '#222527',
+            }}
+          >
+            {isLongBreakDue ? (
+              <>
+                <Coffee className="h-4 w-4 shrink-0" />
+                <span>Time for a long break — you earned it!</span>
+              </>
+            ) : (
+              <>
+                <Zap className="h-4 w-4 shrink-0 text-[#222527]/50" />
+                <span className="text-[#222527]/70">Take a short break, then keep going</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Completed sets badge */}
+        {completedSets > 0 && (
+          <p className="text-[11px] text-[#222527]/35">
+            {completedSets} full {completedSets === 1 ? 'set' : 'sets'} completed today
+          </p>
+        )}
+      </div>
 
       {/* ── Priority link ───────────────────────────────────────────────── */}
       <div className="relative" ref={pickerRef}>
