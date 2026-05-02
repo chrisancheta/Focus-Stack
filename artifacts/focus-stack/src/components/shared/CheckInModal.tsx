@@ -44,7 +44,7 @@ export function CheckInModal({ isOpen, onClose, priorities, onSave }: CheckInMod
         
         <div className="space-y-6 py-4">
           {priorities.map(p => {
-            const current = updates[p.id];
+            const current = updates[p.id] ?? { status: p.status, progress: p.progressPercent, reason: undefined };
             const isCompleted = current.status === 'completed';
             
             return (
