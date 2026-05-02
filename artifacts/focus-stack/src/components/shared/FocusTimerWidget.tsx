@@ -8,9 +8,9 @@ interface FocusTimerWidgetProps {
   priorityId?: string;
 }
 
-// ── Clock geometry ─────────────────────────────────────────────────────────────
+// ── Clock SVG geometry ────────────────────────────────────────────────────────
 const SVG_SIZE    = 340;
-const CENTER      = SVG_SIZE / 2;
+const CENTER      = SVG_SIZE / 2;      // 170
 const TICK_R_OUT  = 156;
 const TICK_R_LONG = 140;
 const TICK_R_SHORT= 149;
@@ -18,49 +18,41 @@ const PROGRESS_R  = 128;
 const PROGRESS_C  = 2 * Math.PI * PROGRESS_R;
 const BG_R        = 162;
 
-// ── Crescent panel geometry ────────────────────────────────────────────────────
-// The crescent is a standalone shape placed beside the clock with a small gap.
-// It uses a decorative concave-left arc that echoes the clock circle's curvature.
-const PANEL_W     = 84;    // total panel width (px)
-const PANEL_H     = 160;   // total panel height (px)
-const CONCAVITY   = 18;    // how deep the left arc dips into the panel (px) at centre
-const ARC_R       = 162;   // arc radius – matches the clock circle visually
+// ── Orbital button layout ─────────────────────────────────────────────────────
+// Outer container is square; clock SVG is centred inside it.
+// Buttons are absolutely positioned on an invisible orbit ring.
+const CONTAINER  = 440;                         // container px (must fit all orbiting buttons)
+const CX         = CONTAINER / 2;               // 220 – clock centre in container space
+const CY         = CONTAINER / 2;               // 220
+const SVG_OFFSET = (CONTAINER - SVG_SIZE) / 2;  // 50 – top-left of SVG inside container
+const ORBIT_R    = 196;                         // orbit radius (from clock centre)
+const BTN_S      = 44;                          // preset & reset button size (px)
+const PLAY_S     = 56;                          // play/pause button size (px)
 
 /**
- * Builds the crescent clip-path in the panel's own pixel coordinate space.
- *
- *  - Left edge: concave arc (mimics the clock circle's curvature)
- *  - Right edge: straight with rounded corners
- *  - The arc starts/ends where the virtual circle intersects the panel top/bottom.
- *
- * Virtual circle centre: x = CONCAVITY − ARC_R  (to the left of the panel),
- *                        y = panelH / 2          (vertically centred)
+ * Convert clock-face hour to an absolute {left, top} for a centred button.
+ * Hour 3 = right, 6 = bottom, 9 = left, 12 = top.
  */
-function crescentClipPath(w: number, h: number): string {
-  const halfH = h / 2;
-  const vCX   = CONCAVITY - ARC_R;          // e.g. 18 − 162 = −144  (left of panel)
-  // vertical distance from centre where virtual circle crosses x = 0
-  const disc  = ARC_R * ARC_R - vCX * vCX;  // = R² − (R−concavity)²
-  const dy    = disc > 0 ? Math.sqrt(disc) : 0;
-  const yTop  = parseFloat(Math.max(0, halfH - dy).toFixed(2));
-  const yBot  = parseFloat(Math.min(h, halfH + dy).toFixed(2));
-  const cr    = 20; // corner radius on the right side
-
-  // Arc: clockwise (sweep=1), short (large-arc=0) from (0,yTop) → (CONCAVITY,halfH) → (0,yBot)
-  return (
-    `path('` +
-    `M 0 ${yTop} ` +
-    `A ${ARC_R} ${ARC_R} 0 0 1 0 ${yBot} ` +
-    `L ${w - cr} ${yBot} Q ${w} ${yBot} ${w} ${yBot - cr} ` +
-    `L ${w} ${yTop + cr} Q ${w} ${yTop} ${w - cr} ${yTop} ` +
-    `Z')`
-  );
+function clockPos(hour: number, btnSize: number) {
+  const deg = hour * 30;                          // clock degree (0 = 12, CW)
+  const rad = (deg * Math.PI) / 180;
+  const x   = CX + ORBIT_R * Math.sin(rad);
+  const y   = CY - ORBIT_R * Math.cos(rad);
+  return { left: x - btnSize / 2, top: y - btnSize / 2 };
 }
 
 function polarToXY(cx: number, cy: number, r: number, deg: number) {
   const rad = ((deg - 90) * Math.PI) / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
+
+// Shared styles for ghost/inactive buttons
+const ghostStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.55)',
+  backdropFilter: 'blur(10px)',
+  WebkitBackdropFilter: 'blur(10px)',
+  border: '1px solid rgba(255,255,255,0.70)',
+};
 
 export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimerWidgetProps) {
   const { state } = useAppStore();
@@ -112,20 +104,32 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
     if (v > 0 && v <= 240) { setDuration(v); setShowCustomInput(false); setCustomInput(''); }
   };
 
-  // Pre-compute the crescent clip-path (static geometry)
-  const clipPath = crescentClipPath(PANEL_W, PANEL_H);
+  // Preset button config: [label, hour, value]
+  const presets: [string, number, number | 'custom'][] = [
+    ['30m', 2, 30],
+    ['60m', 3, 60],
+    [isCustom ? `${duration}m` : '···', 4, 'custom'],
+  ];
 
   return (
     <div className="flex items-center justify-center select-none">
-      {/* flex row: clock  ·gap·  crescent — both vertically centred */}
-      <div className="flex items-center gap-3">
-
-        {/* ── Clock face ──────────────────────────────────────────────── */}
-        <div style={{ flexShrink: 0 }}>
+      {/* ── Orbital container ─────────────────────────────────────────────
+          Fixed square. Clock SVG is centred. All buttons are positioned
+          absolutely on the invisible orbit ring (radius = ORBIT_R from CX,CY).
+      ──────────────────────────────────────────────────────────────────── */}
+      <div
+        className="relative"
+        style={{ width: CONTAINER, height: CONTAINER }}
+      >
+        {/* ── Clock face SVG ────────────────────────────────────────────── */}
+        <div
+          className="absolute"
+          style={{ left: SVG_OFFSET, top: SVG_OFFSET }}
+        >
           <svg
             width={SVG_SIZE} height={SVG_SIZE}
             viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
-            style={{ filter: 'drop-shadow(0 8px 32px rgba(34,37,39,0.14))', overflow: 'visible' }}
+            style={{ filter: 'drop-shadow(0 8px 32px rgba(34,37,39,0.13))' }}
           >
             <defs>
               <radialGradient id="clockBg" cx="50%" cy="50%" r="50%">
@@ -177,90 +181,21 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
               {statusLabel}
             </text>
           </svg>
-
-          {/* Controls below the clock */}
-          <div className="flex justify-center items-center gap-4 mt-5">
-            <button
-              onClick={() => { setIsRunning(false); setTimeLeft(duration * 60); }}
-              className="w-11 h-11 rounded-full flex items-center justify-center text-[#222527]/65 hover:text-[#222527] transition-all"
-              style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.65)' }}
-              title="Reset"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setIsRunning(!isRunning)}
-              className="w-16 h-16 rounded-full flex items-center justify-center text-white transition-all hover:opacity-85 active:scale-95"
-              style={{ background: '#222527', boxShadow: '0 6px 24px rgba(34,37,39,0.28)' }}
-            >
-              {isRunning ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-0.5" />}
-            </button>
-            <div className="w-11 h-11" />
-          </div>
         </div>
 
-        {/* ── Crescent preset panel ─────────────────────────────────────
-            Standalone crescent shape beside the clock.
-            clip-path: concave left arc + rounded right corners.
-            Buttons are centred inside via absolute positioning.
-        ──────────────────────────────────────────────────────────────── */}
-        <div
-          className="relative"
-          style={{
-            width: `${PANEL_W}px`,
-            height: `${PANEL_H}px`,
-            background: 'rgba(255,255,255,0.46)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
-            clipPath,
-            boxShadow: '0 4px 20px rgba(34,37,39,0.08)',
-          }}
-        >
-          {/* Buttons centred vertically, aligned toward the right */}
-          <div
-            className="absolute flex flex-col gap-3"
-            style={{ right: '12px', top: '50%', transform: 'translateY(-50%)' }}
-          >
-            {!showCustomInput ? (
-              <>
-                {[30, 60].map(min => (
-                  <button
-                    key={min}
-                    onClick={() => setDuration(min)}
-                    disabled={isRunning}
-                    className={cn(
-                      'w-10 h-10 rounded-xl text-sm font-medium transition-all disabled:opacity-40',
-                      duration === min && !isCustom
-                        ? 'bg-[#222527] text-white shadow-sm'
-                        : 'text-[#222527]/70 hover:bg-white/90',
-                    )}
-                    style={duration === min && !isCustom ? {} : {
-                      background: 'rgba(255,255,255,0.65)',
-                      border: '1px solid rgba(255,255,255,0.80)',
-                    }}
-                  >
-                    {min}m
-                  </button>
-                ))}
-                <button
-                  onClick={() => setShowCustomInput(true)}
-                  disabled={isRunning}
-                  className={cn(
-                    'w-10 h-10 rounded-xl text-xs font-medium transition-all disabled:opacity-40',
-                    isCustom
-                      ? 'bg-[#222527] text-white shadow-sm'
-                      : 'text-[#222527]/70 hover:bg-white/90',
-                  )}
-                  style={isCustom ? {} : {
-                    background: 'rgba(255,255,255,0.65)',
-                    border: '1px solid rgba(255,255,255,0.80)',
-                  }}
-                >
-                  {isCustom ? `${duration}m` : '···'}
-                </button>
-              </>
-            ) : (
-              <>
+        {/* ── Preset buttons — 2, 3, 4 o'clock ─────────────────────────── */}
+        {presets.map(([label, hour, value]) => {
+          const pos     = clockPos(hour, BTN_S);
+          const isActive = value === 'custom' ? isCustom : duration === value && !isCustom;
+
+          if (value === 'custom' && showCustomInput) {
+            // Show a small number input in place of the ··· button
+            return (
+              <div
+                key="custom-input"
+                className="absolute flex flex-col items-center gap-1"
+                style={{ ...clockPos(hour, 56), width: 56 }}
+              >
                 <input
                   type="number" min="1" max="240"
                   value={customInput}
@@ -270,28 +205,75 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
                     if (e.key === 'Escape') setShowCustomInput(false);
                   }}
                   placeholder="min"
-                  className="w-10 h-10 rounded-xl text-[11px] text-center text-[#222527] outline-none"
+                  className="w-11 h-11 rounded-full text-[11px] text-center text-[#222527] outline-none"
                   style={{ background: 'rgba(255,255,255,0.90)', border: '1px solid rgba(144,157,146,0.45)' }}
                   autoFocus
                 />
                 <button
                   onClick={handleSetCustom}
-                  className="w-10 h-9 rounded-xl text-[11px] font-medium text-[#222527]/70 hover:text-[#222527] transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.80)' }}
+                  className="text-[10px] font-medium text-[#222527]/60 hover:text-[#222527] transition-colors leading-none"
                 >
                   Set
                 </button>
-                <button
-                  onClick={() => setShowCustomInput(false)}
-                  className="w-10 h-9 rounded-xl text-xs text-[#222527]/50 hover:text-[#222527] transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.50)', border: '1px solid rgba(255,255,255,0.70)' }}
-                >
-                  ✕
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={String(value)}
+              onClick={() => {
+                if (value === 'custom') { setShowCustomInput(true); }
+                else { setDuration(value); setShowCustomInput(false); }
+              }}
+              disabled={isRunning && value !== 'custom'}
+              className={cn(
+                'absolute rounded-full text-sm font-medium transition-all disabled:opacity-40 flex items-center justify-center',
+                isActive ? 'text-white shadow-md' : 'text-[#222527]/70 hover:text-[#222527]',
+              )}
+              style={{
+                ...pos,
+                width: BTN_S,
+                height: BTN_S,
+                ...(isActive
+                  ? { background: '#222527', boxShadow: '0 4px 16px rgba(34,37,39,0.28)' }
+                  : ghostStyle),
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+
+        {/* ── Play / Pause — 6 o'clock ──────────────────────────────────── */}
+        <button
+          onClick={() => setIsRunning(!isRunning)}
+          className="absolute rounded-full flex items-center justify-center text-white transition-all hover:opacity-85 active:scale-95"
+          style={{
+            ...clockPos(6, PLAY_S),
+            width: PLAY_S,
+            height: PLAY_S,
+            background: '#222527',
+            boxShadow: '0 6px 24px rgba(34,37,39,0.28)',
+          }}
+        >
+          {isRunning ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+        </button>
+
+        {/* ── Reset — 8 o'clock ─────────────────────────────────────────── */}
+        <button
+          onClick={() => { setIsRunning(false); setTimeLeft(duration * 60); }}
+          className="absolute rounded-full flex items-center justify-center text-[#222527]/65 hover:text-[#222527] transition-all"
+          style={{
+            ...clockPos(8, BTN_S),
+            width: BTN_S,
+            height: BTN_S,
+            ...ghostStyle,
+          }}
+          title="Reset"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </button>
 
       </div>
     </div>
