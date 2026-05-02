@@ -27,6 +27,7 @@ export function TopNav() {
     >
       <div className="max-w-3xl mx-auto flex h-14 items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Focus Stack" className="h-7 w-7 object-contain" />
           <span className="font-semibold text-[#222527] tracking-tight text-base">Focus Stack</span>
         </div>
 
