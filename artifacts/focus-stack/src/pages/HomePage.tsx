@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'wouter';
 import { useAppStore } from '@/lib/storeContext';
+import { useTimer } from '@/lib/timerContext';
 import { PriorityCard } from '@/components/priority/PriorityCard';
 import { QuickAddInput } from '@/components/priority/QuickAddInput';
 import { PriorityDetailModal } from '@/components/priority/PriorityDetailModal';
@@ -38,6 +40,8 @@ function getRecurringIdsForToday(priorities: ReturnType<typeof useAppStore>['sta
 
 export default function HomePage() {
   const { state, addPriority, updatePriority, deletePriority, addDayPlan, updateDayPlan } = useAppStore();
+  const { linkPriority } = useTimer();
+  const [, setLocation] = useLocation();
   const [selectedPriorityId, setSelectedPriorityId] = useState<string | null>(null);
   const [showCheckIn, setShowCheckIn] = useState(false);
 
@@ -122,6 +126,11 @@ export default function HomePage() {
   };
 
   const handleComplete = (id: string) => updatePriority(id, { status: 'completed', progressPercent: 100 });
+
+  const handleStartFocus = (id: string) => {
+    linkPriority(id);
+    setLocation('/focus');
+  };
 
   const handleKeepOpen = () => {
     const recurringIds = getRecurringIdsForToday(state.priorities, today);
@@ -343,6 +352,7 @@ export default function HomePage() {
                   onComplete={() => handleComplete(p.id)}
                   onMoveUp={() => handleMoveUp(p.id)}
                   onMoveDown={() => handleMoveDown(p.id)}
+                  onStartFocus={() => handleStartFocus(p.id)}
                   showMoveControls
                 />
               ))}
@@ -359,6 +369,7 @@ export default function HomePage() {
                         key={p.id}
                         priority={p}
                         onClick={() => setSelectedPriorityId(p.id)}
+                        onStartFocus={() => handleStartFocus(p.id)}
                       />
                     ))}
                   </div>
