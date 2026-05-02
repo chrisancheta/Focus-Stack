@@ -1,6 +1,26 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+
+const BUCKET_CONFIG = {
+  'must-do': {
+    label: 'Must do',
+    bg: 'rgba(34,37,39,0.85)',
+    color: '#fff',
+    border: 'transparent',
+  },
+  'should-do': {
+    label: 'Should do',
+    bg: 'rgba(144,157,146,0.32)',
+    color: 'rgba(34,37,39,0.80)',
+    border: 'rgba(144,157,146,0.42)',
+  },
+  'could-do': {
+    label: 'Could do',
+    bg: 'rgba(255,255,255,0.48)',
+    color: 'rgba(34,37,39,0.52)',
+    border: 'rgba(255,255,255,0.62)',
+  },
+};
 
 interface BucketBadgeProps {
   bucket: 'must-do' | 'should-do' | 'could-do';
@@ -8,17 +28,13 @@ interface BucketBadgeProps {
 }
 
 export function BucketBadge({ bucket, className }: BucketBadgeProps) {
-  const config = {
-    'must-do': { text: 'Must Do', styles: 'bg-destructive/10 text-destructive border-destructive/20' },
-    'should-do': { text: 'Should Do', styles: 'bg-primary/10 text-primary border-primary/20' },
-    'could-do': { text: 'Could Do', styles: 'bg-muted text-muted-foreground border-border' }
-  };
-
-  const { text, styles } = config[bucket];
-
+  const c = BUCKET_CONFIG[bucket];
   return (
-    <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider rounded-sm px-1.5 py-0.5", styles, className)}>
-      {text}
-    </Badge>
+    <span
+      className={cn("inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md tracking-wide", className)}
+      style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}
+    >
+      {c.label}
+    </span>
   );
 }

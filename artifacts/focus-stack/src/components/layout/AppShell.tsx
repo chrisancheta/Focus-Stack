@@ -21,17 +21,14 @@ function CheckInTrigger() {
         const now = new Date();
         const currentHours = now.getHours();
         const currentMinutes = now.getMinutes();
-        
         const [targetHours, targetMinutes] = state.settings!.reminderTimeLocal.split(':').map(Number);
-        
         if (currentHours > targetHours || (currentHours === targetHours && currentMinutes >= targetMinutes)) {
           setShowModal(true);
           setCheckedToday(true);
         }
       };
-
       checkTime();
-      const interval = setInterval(checkTime, 60000); // Check every minute
+      const interval = setInterval(checkTime, 60000);
       return () => clearInterval(interval);
     }
   }, [state.settings, state.dayPlans, checkedToday]);
@@ -39,31 +36,21 @@ function CheckInTrigger() {
   const handleSaveCheckIn = (updates: { id: string; status: string; progress: number; reason?: string }[]) => {
     const today = getTodayISODate();
     const todayPlan = state.dayPlans.find(dp => dp.date === today);
-    
     updates.forEach(u => {
-      updatePriority(u.id, { 
-        status: u.status as any, 
-        progressPercent: u.progress as any 
-      });
+      updatePriority(u.id, { status: u.status as any, progressPercent: u.progress as any });
     });
-
     if (todayPlan) {
-      updateDayPlan(todayPlan.id, {
-        checkInCompleted: true,
-        checkInCompletedAt: new Date().toISOString()
-      });
+      updateDayPlan(todayPlan.id, { checkInCompleted: true, checkInCompletedAt: new Date().toISOString() });
     }
   };
 
   const today = getTodayISODate();
   const todayPlan = state.dayPlans.find(dp => dp.date === today);
-  const prioritiesToCheck = todayPlan 
-    ? state.priorities.filter(p => todayPlan.selectedPriorityIds.includes(p.id))
-    : [];
+  const prioritiesToCheck = todayPlan ? state.priorities.filter(p => todayPlan.selectedPriorityIds.includes(p.id)) : [];
 
   return (
-    <CheckInModal 
-      isOpen={showModal} 
+    <CheckInModal
+      isOpen={showModal}
       onClose={() => setShowModal(false)}
       priorities={prioritiesToCheck}
       onSave={handleSaveCheckIn}
@@ -76,10 +63,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const hideNav = location === '/welcome' || location === '/setup';
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col text-foreground font-sans">
+    <div className="min-h-[100dvh] flex flex-col font-sans" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {!hideNav && <TopNav />}
       {!hideNav && <CheckInTrigger />}
-      <main className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
         {children}
       </main>
     </div>

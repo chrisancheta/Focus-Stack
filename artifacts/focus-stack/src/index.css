@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -68,15 +68,15 @@
 }
 
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(255,255,255, .25);
+  --badge-outline: rgba(255,255,255, .15);
 
   --opaque-button-border-intensity: -8;
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: rgba(255,255,255, .08);
+  --elevate-2: rgba(255,255,255, .14);
 
-  --background: 90 14% 97%;
+  --background: 100 12% 87%;
   --foreground: 200 8% 15%;
   --card: 0 0% 100%;
   --card-foreground: 200 8% 15%;
@@ -97,7 +97,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 200 8% 15%;
   --popover-border: 0 0% 90%;
-  
+
   --sidebar: 100 13% 95%;
   --sidebar-foreground: 200 8% 15%;
   --sidebar-border: 0 0% 90%;
@@ -107,25 +107,25 @@
   --sidebar-accent-foreground: 200 8% 15%;
   --sidebar-ring: 127 5% 59%;
 
-  --chart-1: 127 20% 55%;
-  --chart-2: 127 10% 70%;
-  --chart-3: 200 15% 60%;
-  --chart-4: 155 8% 75%;
-  --chart-5: 100 12% 80%;
+  --chart-1: 127 18% 52%;
+  --chart-2: 127 12% 68%;
+  --chart-3: 200 14% 58%;
+  --chart-4: 155 8% 72%;
+  --chart-5: 100 10% 78%;
 
-  --app-font-sans: 'Plus Jakarta Sans', sans-serif;
+  --app-font-sans: 'DM Sans', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
-  --radius: 0.625rem;
-  
-  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.02);
-  --shadow-xs: 0px 2px 4px 0px rgba(0,0,0,0.02);
-  --shadow-sm: 0px 2px 6px 0px rgba(0,0,0,0.03), 0px 1px 2px -1px rgba(0,0,0,0.02);
-  --shadow: 0px 4px 8px 0px rgba(0,0,0,0.04), 0px 2px 4px -1px rgba(0,0,0,0.02);
-  --shadow-md: 0px 6px 12px 0px rgba(0,0,0,0.05), 0px 4px 6px -1px rgba(0,0,0,0.03);
-  --shadow-lg: 0px 10px 15px 0px rgba(0,0,0,0.06), 0px 6px 8px -1px rgba(0,0,0,0.04);
-  --shadow-xl: 0px 15px 25px 0px rgba(0,0,0,0.08), 0px 10px 10px -1px rgba(0,0,0,0.05);
-  --shadow-2xl: 0px 20px 30px 0px rgba(0,0,0,0.1);
+  --radius: 0.75rem;
+
+  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.04);
+  --shadow-xs: 0px 2px 4px 0px rgba(0,0,0,0.05);
+  --shadow-sm: 0px 2px 8px 0px rgba(0,0,0,0.06), 0px 1px 2px -1px rgba(0,0,0,0.04);
+  --shadow: 0px 4px 12px 0px rgba(0,0,0,0.07), 0px 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-md: 0px 8px 20px 0px rgba(0,0,0,0.08), 0px 4px 6px -1px rgba(0,0,0,0.05);
+  --shadow-lg: 0px 12px 28px 0px rgba(0,0,0,0.10), 0px 6px 8px -1px rgba(0,0,0,0.06);
+  --shadow-xl: 0px 20px 40px 0px rgba(0,0,0,0.12), 0px 10px 10px -1px rgba(0,0,0,0.07);
+  --shadow-2xl: 0px 28px 48px 0px rgba(0,0,0,0.14);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -145,7 +145,6 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  /* Fallback dark mode - though request specified mostly light mode default */
   --background: 200 10% 10%;
   --foreground: 90 14% 97%;
   --card: 200 8% 12%;
@@ -167,7 +166,7 @@
   --popover: 200 8% 12%;
   --popover-foreground: 90 14% 97%;
   --popover-border: 200 8% 20%;
-  
+
   --sidebar: 200 8% 12%;
   --sidebar-foreground: 90 14% 97%;
   --sidebar-border: 200 8% 20%;
@@ -182,7 +181,7 @@
   --chart-3: 200 15% 60%;
   --chart-4: 155 8% 75%;
   --chart-5: 100 12% 80%;
-  
+
   --shadow-2xs: 0px 2px 0px 0px rgba(0,0,0,0.5);
   --shadow-xs: 0px 2px 0px 0px rgba(0,0,0,0.5);
   --shadow-sm: 0px 2px 0px 0px rgba(0,0,0,0.5), 0px 1px 2px -1px rgba(0,0,0,0.5);
@@ -198,7 +197,9 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: linear-gradient(135deg, #DDE3D6 0%, #909D92 100%);
+    min-height: 100vh;
   }
 }
 
@@ -211,6 +212,28 @@
     color: hsl(var(--muted-foreground));
     pointer-events: none;
   }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+  }
+
+  .glass-card-dark {
+    background: rgba(34, 37, 39, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .glass-subtle {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+  }
+
   .no-default-hover-elevate {}
   .no-default-active-elevate {}
   .toggle-elevate::before,

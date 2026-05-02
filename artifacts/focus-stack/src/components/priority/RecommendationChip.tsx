@@ -1,6 +1,32 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+
+const CHIP_CONFIG = {
+  'do-now': {
+    label: 'Do now',
+    bg: 'rgba(34,37,39,0.10)',
+    color: 'rgba(34,37,39,0.75)',
+    border: 'rgba(34,37,39,0.15)',
+  },
+  'schedule': {
+    label: 'Schedule',
+    bg: 'rgba(144,157,146,0.22)',
+    color: 'rgba(34,37,39,0.65)',
+    border: 'rgba(144,157,146,0.35)',
+  },
+  'reconsider': {
+    label: 'Reconsider',
+    bg: 'rgba(255,255,255,0.35)',
+    color: 'rgba(34,37,39,0.50)',
+    border: 'rgba(255,255,255,0.50)',
+  },
+  'deprioritize': {
+    label: 'Deprioritize',
+    bg: 'transparent',
+    color: 'rgba(34,37,39,0.35)',
+    border: 'rgba(34,37,39,0.12)',
+  },
+};
 
 interface RecommendationChipProps {
   label: 'do-now' | 'schedule' | 'reconsider' | 'deprioritize';
@@ -8,18 +34,13 @@ interface RecommendationChipProps {
 }
 
 export function RecommendationChip({ label, className }: RecommendationChipProps) {
-  const config = {
-    'do-now': { text: 'Do Now', styles: 'bg-primary text-primary-foreground border-transparent' },
-    'schedule': { text: 'Schedule', styles: 'bg-accent text-accent-foreground border-transparent' },
-    'reconsider': { text: 'Reconsider', styles: 'bg-muted text-muted-foreground border-border' },
-    'deprioritize': { text: 'Deprioritize', styles: 'bg-transparent text-muted-foreground border-border opacity-70' }
-  };
-
-  const { text, styles } = config[label];
-
+  const c = CHIP_CONFIG[label];
   return (
-    <Badge variant="outline" className={cn("text-[10px] uppercase font-bold tracking-wider rounded-sm px-1.5 py-0.5", styles, className)}>
-      {text}
-    </Badge>
+    <span
+      className={cn("inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-md tracking-wide", className)}
+      style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}
+    >
+      {c.label}
+    </span>
   );
 }

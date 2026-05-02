@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
 import { useAppStore } from '@/lib/storeContext';
-import { Button } from '@/components/ui/button';
-import { SectionCard } from '@/components/shared/SectionCard';
 import { PriorityCard } from '@/components/priority/PriorityCard';
 import { QuickAddInput } from '@/components/priority/QuickAddInput';
 import { PriorityDetailModal } from '@/components/priority/PriorityDetailModal';
-import { generateId, getTodayISODate } from '@/lib/utils';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
+import { generateId, getTodayISODate } from '@/lib/utils';
+
+const GLASS = {
+  background: 'rgba(255,255,255,0.45)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255,255,255,0.58)',
+};
+
+const GLASS_SUBTLE = {
+  background: 'rgba(255,255,255,0.28)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.38)',
+};
 
 export default function HomePage() {
   const { state, addPriority, updatePriority, updateDayPlan } = useAppStore();
@@ -14,13 +26,12 @@ export default function HomePage() {
 
   const today = getTodayISODate();
   const todayPlan = state.dayPlans.find(dp => dp.date === today);
-
   const priorities = state.priorities;
   const carryoverPriorities = priorities.filter(p => p.isCarryover && p.status !== 'completed');
-  
-  const selectedPriorities = todayPlan 
+
+  const selectedPriorities = todayPlan
     ? priorities.filter(p => todayPlan.selectedPriorityIds.includes(p.id))
-    : carryoverPriorities; // Fallback to carryover if no plan
+    : carryoverPriorities;
 
   const candidatePriorities = todayPlan
     ? priorities.filter(p => todayPlan.candidatePriorityIds.includes(p.id))
@@ -36,7 +47,7 @@ export default function HomePage() {
       title,
       bucket: 'should-do' as const,
       recommendationLabel: 'schedule' as const,
-      recommendationReason: "Added just now",
+      recommendationReason: 'Added just now',
       status: 'not-started' as const,
       progressPercent: 0 as const,
       importanceScore: 3 as const,
@@ -44,16 +55,12 @@ export default function HomePage() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    
     addPriority(newPriority);
-    
-    // Add to today's plan if it exists
     if (todayPlan) {
       updateDayPlan(todayPlan.id, {
-        selectedPriorityIds: [...todayPlan.selectedPriorityIds, newPriority.id]
+        selectedPriorityIds: [...todayPlan.selectedPriorityIds, newPriority.id],
       });
     } else {
-      // Create new plan
       updateDayPlan(generateId(), {
         date: today,
         weekStartDay: state.settings?.weekStartDay || 1,
@@ -61,122 +68,166 @@ export default function HomePage() {
         candidatePriorityIds: [],
         completedPriorityIds: [],
         checkInCompleted: false,
-        zeroPriorityDay: false
+        zeroPriorityDay: false,
       });
     }
   };
 
-  const handleComplete = (id: string) => {
-    updatePriority(id, { status: 'completed', progressPercent: 100 });
-  };
+  const handleComplete = (id: string) => updatePriority(id, { status: 'completed', progressPercent: 100 });
 
   const handleMoveUp = (id: string) => {
     if (!todayPlan) return;
     const ids = [...todayPlan.selectedPriorityIds];
-    const index = ids.indexOf(id);
-    if (index > 0) {
-      [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-      updateDayPlan(todayPlan.id, { selectedPriorityIds: ids });
-    }
+    const i = ids.indexOf(id);
+    if (i > 0) { [ids[i - 1], ids[i]] = [ids[i], ids[i - 1]]; updateDayPlan(todayPlan.id, { selectedPriorityIds: ids }); }
   };
 
   const handleMoveDown = (id: string) => {
     if (!todayPlan) return;
     const ids = [...todayPlan.selectedPriorityIds];
-    const index = ids.indexOf(id);
-    if (index < ids.length - 1) {
-      [ids[index + 1], ids[index]] = [ids[index], ids[index + 1]];
-      updateDayPlan(todayPlan.id, { selectedPriorityIds: ids });
-    }
+    const i = ids.indexOf(id);
+    if (i < ids.length - 1) { [ids[i + 1], ids[i]] = [ids[i], ids[i + 1]]; updateDayPlan(todayPlan.id, { selectedPriorityIds: ids }); }
   };
 
-  const renderEmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-        <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-      <h2 className="text-xl font-semibold mb-2">Ready to plan your day?</h2>
-      <p className="text-muted-foreground mb-6 max-w-md">Add a few priorities or generate a suggested plan based on your tasks.</p>
-      
-      <div className="w-full max-w-md bg-card border border-border p-2 rounded-full mb-6">
-        <QuickAddInput onAdd={handleQuickAdd} placeholder="e.g. Draft research proposal, 2h" className="px-2" />
-      </div>
-    </div>
-  );
+  const dismissCarryover = (id: string) => updatePriority(id, { isCarryover: false });
+
+  const isEmpty = !todayPlan || todayPlan.selectedPriorityIds.length === 0;
 
   return (
-    <div className="space-y-6">
-      {!todayPlan || todayPlan.selectedPriorityIds.length === 0 ? (
-        renderEmptyState()
+    <div className="space-y-4">
+      {isEmpty ? (
+        <div className="flex flex-col gap-4">
+          <div className="rounded-3xl p-6" style={GLASS}>
+            <h2 className="text-lg font-semibold text-[#222527] tracking-tight mb-1">Set Today's Priorities</h2>
+            <p className="text-sm text-[#222527]/50 mb-5">What needs your attention most today?</p>
+            <QuickAddInput
+              onAdd={handleQuickAdd}
+              placeholder="Finish strategy assignment tonight, 1 hour, due Friday"
+              className="text-sm"
+            />
+            <div className="flex items-center gap-3 mt-4">
+              <button
+                onClick={() => handleQuickAdd('Today is open')}
+                className="text-xs text-[#222527]/45 hover:text-[#222527]/70 transition-colors underline-offset-2 hover:underline"
+              >
+                Keep today open
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-5" style={GLASS_SUBTLE}>
+            <p className="text-sm font-medium text-[#222527]/60 mb-1">No priorities selected yet.</p>
+            <p className="text-xs text-[#222527]/40">Add one above or keep today open for focused work.</p>
+            <div className="flex gap-2 flex-wrap mt-4">
+              {['Add your first priority', 'Keep today open'].map(chip => (
+                <button
+                  key={chip}
+                  className="text-xs px-3 py-1.5 rounded-full font-medium text-[#222527]/60 hover:text-[#222527] transition-all"
+                  style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.65)' }}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-4" style={GLASS_SUBTLE}>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 mb-3">Today</p>
+            <div className="flex gap-6 text-sm text-[#222527]/60">
+              <div><span className="text-xl font-light text-[#222527]">0</span><br /><span className="text-xs">selected</span></div>
+              <div><span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span><br /><span className="text-xs">carryover</span></div>
+              <div><span className="text-sm font-medium text-[#222527]/70">4:45 PM</span><br /><span className="text-xs">check-in</span></div>
+            </div>
+          </div>
+        </div>
       ) : (
         <>
-          <SectionCard className="bg-accent/30 border-transparent">
-            <QuickAddInput onAdd={handleQuickAdd} placeholder="What needs focus today?" />
-          </SectionCard>
+          <div className="rounded-2xl px-4 py-3" style={GLASS_SUBTLE}>
+            <QuickAddInput onAdd={handleQuickAdd} placeholder="Add another priority..." />
+          </div>
 
           {carryoverPriorities.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-destructive flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-destructive" />
-                Needs Attention (Carryover)
-              </h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-400/70" />
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-[#222527]/50">
+                  Needs Attention
+                </h3>
+              </div>
               {carryoverPriorities.map(p => (
-                <PriorityCard 
-                  key={p.id} 
-                  priority={p} 
-                  onClick={() => setSelectedPriorityId(p.id)}
-                  onComplete={() => handleComplete(p.id)}
-                />
+                <div key={p.id} className="relative">
+                  <PriorityCard
+                    priority={p}
+                    onClick={() => setSelectedPriorityId(p.id)}
+                    onComplete={() => handleComplete(p.id)}
+                  />
+                  <div
+                    className="absolute bottom-3 right-3 flex gap-1.5"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => dismissCarryover(p.id)}
+                      className="text-[10px] px-2.5 py-1 rounded-full font-medium text-[#222527]/50 hover:text-[#222527]/80 transition-colors"
+                      style={{ background: 'rgba(255,255,255,0.50)', border: '1px solid rgba(255,255,255,0.60)' }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">Today's Priorities</h3>
-              <span className="text-xs text-muted-foreground">Recommended: 3-5</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-[#222527]/50">Today's Priorities</h3>
+                <span
+                  className="text-xs font-semibold px-2 py-0.5 rounded-full text-[#222527]/70"
+                  style={{ background: 'rgba(255,255,255,0.50)' }}
+                >
+                  {selectedPriorities.length}
+                </span>
+              </div>
+              <span className="text-[11px] text-[#222527]/35">Recommended: 3–5</span>
             </div>
-            
             <div className="space-y-2">
               {selectedPriorities.map(p => (
-                <PriorityCard 
-                  key={p.id} 
-                  priority={p} 
+                <PriorityCard
+                  key={p.id}
+                  priority={p}
                   onClick={() => setSelectedPriorityId(p.id)}
                   onComplete={() => handleComplete(p.id)}
                   onMoveUp={() => handleMoveUp(p.id)}
                   onMoveDown={() => handleMoveDown(p.id)}
-                  showMoveControls={true}
+                  showMoveControls
                 />
               ))}
             </div>
           </div>
 
           {(candidatePriorities.length > 0 || completedPriorities.length > 0) && (
-            <div className="space-y-2 pt-4 border-t border-border">
+            <div className="space-y-2 pt-2">
               {candidatePriorities.length > 0 && (
                 <CollapsibleSection title="Other Candidates" count={candidatePriorities.length}>
                   <div className="space-y-2 mt-2">
                     {candidatePriorities.map(p => (
-                      <PriorityCard 
-                        key={p.id} 
-                        priority={p} 
+                      <PriorityCard
+                        key={p.id}
+                        priority={p}
                         onClick={() => setSelectedPriorityId(p.id)}
                       />
                     ))}
                   </div>
                 </CollapsibleSection>
               )}
-              
               {completedPriorities.length > 0 && (
                 <CollapsibleSection title="Completed Today" count={completedPriorities.length}>
                   <div className="space-y-2 mt-2">
                     {completedPriorities.map(p => (
-                      <PriorityCard 
-                        key={p.id} 
-                        priority={p} 
+                      <PriorityCard
+                        key={p.id}
+                        priority={p}
                         onClick={() => setSelectedPriorityId(p.id)}
                       />
                     ))}
@@ -185,6 +236,32 @@ export default function HomePage() {
               )}
             </div>
           )}
+
+          <div className="rounded-2xl p-4" style={GLASS_SUBTLE}>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 mb-3">Today</p>
+            <div className="flex gap-6 text-sm">
+              <div>
+                <span className="text-xl font-light text-[#222527]">{selectedPriorities.length}</span>
+                <br /><span className="text-xs text-[#222527]/50">selected</span>
+              </div>
+              <div>
+                <span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span>
+                <br /><span className="text-xs text-[#222527]/50">carryover</span>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-[#222527]/70">
+                  {state.settings?.reminderTimeLocal
+                    ? (() => {
+                        const [h, m] = state.settings.reminderTimeLocal.split(':').map(Number);
+                        const d = new Date(); d.setHours(h, m);
+                        return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                      })()
+                    : '4:45 PM'}
+                </span>
+                <br /><span className="text-xs text-[#222527]/50">check-in</span>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
@@ -193,7 +270,7 @@ export default function HomePage() {
         isOpen={!!selectedPriorityId}
         onClose={() => setSelectedPriorityId(null)}
         onSave={updatePriority}
-        onDelete={() => { /* impl */ }}
+        onDelete={() => {}}
       />
     </div>
   );
