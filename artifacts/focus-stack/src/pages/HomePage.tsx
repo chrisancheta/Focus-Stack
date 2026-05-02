@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '@/lib/storeContext';
 import { PriorityCard } from '@/components/priority/PriorityCard';
 import { QuickAddInput } from '@/components/priority/QuickAddInput';
@@ -22,6 +22,20 @@ const GLASS_SUBTLE = {
   border: '1px solid rgba(255,255,255,0.38)',
 };
 
+function getRecurringIdsForToday(priorities: ReturnType<typeof useAppStore>['state']['priorities'], today: string): string[] {
+  const todayDow = new Date(today + 'T12:00:00').getDay();
+  return priorities
+    .filter(p => {
+      if (p.status === 'dropped') return false;
+      if (p.recurrenceType === 'daily') return true;
+      if (p.recurrenceType === 'weekly') {
+        return new Date(p.createdAt).getDay() === todayDow;
+      }
+      return false;
+    })
+    .map(p => p.id);
+}
+
 export default function HomePage() {
   const { state, addPriority, updatePriority, deletePriority, addDayPlan, updateDayPlan } = useAppStore();
   const [selectedPriorityId, setSelectedPriorityId] = useState<string | null>(null);
@@ -30,6 +44,29 @@ export default function HomePage() {
   const today = getTodayISODate();
   const todayPlan = state.dayPlans.find(dp => dp.date === today);
   const priorities = state.priorities;
+
+  // Auto-inject recurring priorities into today's plan whenever priorities change
+  const injectedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!todayPlan) return;
+    const recurringIds = getRecurringIdsForToday(state.priorities, today);
+    const current = new Set(todayPlan.selectedPriorityIds);
+    const missing = recurringIds.filter(id => {
+      if (current.has(id)) return false;
+      const key = `${todayPlan.id}:${id}`;
+      if (injectedRef.current.has(key)) return false;
+      return true;
+    });
+    if (missing.length > 0) {
+      missing.forEach(id => injectedRef.current.add(`${todayPlan.id}:${id}`));
+      updateDayPlan(todayPlan.id, {
+        selectedPriorityIds: [...todayPlan.selectedPriorityIds, ...missing],
+        zeroPriorityDay: false,
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today, todayPlan?.id, state.priorities]);
+
   const carryoverPriorities = priorities.filter(p => p.isCarryover && p.status !== 'completed');
 
   const selectedPriorities = todayPlan
@@ -64,14 +101,17 @@ export default function HomePage() {
     if (todayPlan) {
       updateDayPlan(todayPlan.id, {
         selectedPriorityIds: [...todayPlan.selectedPriorityIds, newPriority.id],
+        zeroPriorityDay: false,
       });
     } else {
-      // No day plan exists yet — create one instead of trying to update a phantom ID
+      const recurringIds = getRecurringIdsForToday(state.priorities, today);
+      const allIds = Array.from(new Set([...recurringIds, newPriority.id]));
+      allIds.forEach(id => injectedRef.current.add(`${generateId()}:${id}`));
       const newPlan: DayPlan = {
         id: generateId(),
         date: today,
         weekStartDay: state.settings?.weekStartDay ?? 1,
-        selectedPriorityIds: [newPriority.id],
+        selectedPriorityIds: allIds,
         candidatePriorityIds: [],
         completedPriorityIds: [],
         checkInCompleted: false,
@@ -84,14 +124,17 @@ export default function HomePage() {
   const handleComplete = (id: string) => updatePriority(id, { status: 'completed', progressPercent: 100 });
 
   const handleKeepOpen = () => {
+    const recurringIds = getRecurringIdsForToday(state.priorities, today);
     if (todayPlan) {
       updateDayPlan(todayPlan.id, { zeroPriorityDay: true });
     } else {
+      const planId = generateId();
+      recurringIds.forEach(id => injectedRef.current.add(`${planId}:${id}`));
       addDayPlan({
-        id: generateId(),
+        id: planId,
         date: today,
         weekStartDay: state.settings?.weekStartDay ?? 1,
-        selectedPriorityIds: [],
+        selectedPriorityIds: recurringIds,
         candidatePriorityIds: [],
         completedPriorityIds: [],
         checkInCompleted: false,

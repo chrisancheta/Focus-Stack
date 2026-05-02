@@ -2,7 +2,7 @@ import React from 'react';
 import { PriorityCard as PriorityType } from '@/lib/store';
 import { BucketBadge } from './BucketBadge';
 import { RecommendationChip } from './RecommendationChip';
-import { Clock, Calendar, CheckCircle2, Circle, MoreVertical, Play, ArrowUp, ArrowDown } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, Circle, MoreVertical, Play, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -89,6 +89,15 @@ export function PriorityCard({
                 style={{ background: 'rgba(239,68,68,0.10)', color: 'rgba(239,68,68,0.80)' }}
               >
                 Carryover
+              </span>
+            )}
+            {priority.recurrenceType && priority.recurrenceType !== 'none' && !isCompleted && (
+              <span
+                className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                style={{ background: 'rgba(107,143,110,0.12)', color: 'rgba(107,143,110,0.90)' }}
+              >
+                <RefreshCw className="h-2.5 w-2.5" />
+                {priority.recurrenceType === 'daily' ? 'Daily' : 'Weekly'}
               </span>
             )}
           </div>

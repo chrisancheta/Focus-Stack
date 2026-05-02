@@ -103,6 +103,18 @@ export function PriorityDetailModal({ priority, isOpen, onClose, onSave, onDelet
           </div>
 
           <div className="space-y-2">
+            <Label>Repeats</Label>
+            <Select value={formData.recurrenceType || 'none'} onValueChange={v => handleChange('recurrenceType', v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="daily">Every day</SelectItem>
+                <SelectItem value="weekly">Every week (same day)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label>Notes</Label>
             <Textarea 
               value={formData.notes || ''} 
