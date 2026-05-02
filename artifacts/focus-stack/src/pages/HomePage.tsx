@@ -353,6 +353,7 @@ export default function HomePage() {
                   onMoveUp={() => handleMoveUp(p.id)}
                   onMoveDown={() => handleMoveDown(p.id)}
                   onStartFocus={() => handleStartFocus(p.id)}
+                  onNoteChange={note => updatePriority(p.id, { notes: note })}
                   showMoveControls
                 />
               ))}
@@ -370,6 +371,7 @@ export default function HomePage() {
                         priority={p}
                         onClick={() => setSelectedPriorityId(p.id)}
                         onStartFocus={() => handleStartFocus(p.id)}
+                        onNoteChange={note => updatePriority(p.id, { notes: note })}
                       />
                     ))}
                   </div>

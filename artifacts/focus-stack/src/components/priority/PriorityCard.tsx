@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { PriorityCard as PriorityType } from '@/lib/store';
 import { BucketBadge } from './BucketBadge';
 import { RecommendationChip } from './RecommendationChip';
-import { Clock, Calendar, CheckCircle2, Circle, MoreVertical, Play, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, Circle, MoreVertical, Play, ArrowUp, ArrowDown, RefreshCw, StickyNote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ interface PriorityCardProps {
   onComplete?: () => void;
   onDefer?: () => void;
   onStartFocus?: () => void;
+  onNoteChange?: (note: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   showMoveControls?: boolean;
@@ -28,11 +29,32 @@ export function PriorityCard({
   onComplete,
   onDefer,
   onStartFocus,
+  onNoteChange,
   onMoveUp,
   onMoveDown,
   showMoveControls,
 }: PriorityCardProps) {
   const isCompleted = priority.status === 'completed';
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteValue, setNoteValue] = useState(priority.notes ?? '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Keep local value in sync if the priority is updated externally
+  React.useEffect(() => {
+    setNoteValue(priority.notes ?? '');
+  }, [priority.notes]);
+
+  const handleNoteToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const opening = !noteOpen;
+    setNoteOpen(opening);
+    if (opening) setTimeout(() => textareaRef.current?.focus(), 50);
+  };
+
+  const handleNoteBlur = () => {
+    onNoteChange?.(noteValue);
+    if (!noteValue) setNoteOpen(false);
+  };
 
   return (
     <div
@@ -165,8 +187,28 @@ export function PriorityCard({
                   <Play className="h-4 w-4 mr-2" /> Start Focus Timer
                 </DropdownMenuItem>
               )}
+              {onNoteChange && (
+                <DropdownMenuItem onClick={handleNoteToggle}>
+                  <StickyNote className="h-4 w-4 mr-2" /> {noteOpen ? 'Hide note' : 'Add note'}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {onNoteChange && (
+            <button
+              onClick={handleNoteToggle}
+              title="Quick note"
+              className={cn(
+                "transition-colors p-0.5",
+                noteValue
+                  ? "text-[#6B8F6E]/80 hover:text-[#6B8F6E]"
+                  : "text-[#222527]/20 opacity-0 group-hover:opacity-100 hover:text-[#222527]/60"
+              )}
+            >
+              <StickyNote className="h-3.5 w-3.5" />
+            </button>
+          )}
 
           {!isCompleted ? (
             <button
@@ -180,6 +222,33 @@ export function PriorityCard({
           )}
         </div>
       </div>
+
+      {/* ── Inline quick-note ─────────────────────────────────────────── */}
+      {noteOpen && onNoteChange && (
+        <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }} onClick={e => e.stopPropagation()}>
+          <textarea
+            ref={textareaRef}
+            value={noteValue}
+            onChange={e => setNoteValue(e.target.value)}
+            onBlur={handleNoteBlur}
+            onKeyDown={e => { if (e.key === 'Escape') { handleNoteBlur(); setNoteOpen(false); } }}
+            placeholder="Add a note, blocker, or link…"
+            rows={2}
+            className="w-full resize-none text-xs text-[#222527]/80 placeholder:text-[#222527]/30 bg-transparent outline-none leading-relaxed"
+          />
+        </div>
+      )}
+
+      {/* ── Collapsed note preview (when closed but note exists) ─────── */}
+      {!noteOpen && noteValue && (
+        <div
+          className="mt-2 pt-2 cursor-text"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.40)' }}
+          onClick={e => { e.stopPropagation(); setNoteOpen(true); setTimeout(() => textareaRef.current?.focus(), 50); }}
+        >
+          <p className="text-xs text-[#222527]/50 line-clamp-2 leading-relaxed">{noteValue}</p>
+        </div>
+      )}
     </div>
   );
 }
