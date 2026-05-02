@@ -14,21 +14,11 @@ export default function WelcomePage() {
           boxShadow: '0 20px 60px rgba(34,37,39,0.10)',
         }}
       >
-        <div
-          className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-7"
-          style={{ background: '#222527' }}
-        >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="1.5" />
-            <path d="M12 7v5l3 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        <h1
-          className="text-2xl font-semibold text-[#222527] mb-2 tracking-tight"
-        >
-          Focus Stack
-        </h1>
+        <img
+          src="/logo-full.png"
+          alt="Focus Stack"
+          className="mx-auto mb-7 h-14 w-auto object-contain"
+        />
         <p className="text-sm text-[#222527]/55 leading-relaxed mb-9">
           Set better priorities, faster. A quiet daily ritual for deciding what actually matters today.
         </p>
