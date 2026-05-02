@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { store, AppState, PriorityCard, DayPlan, Settings } from './store';
+import { store, AppState, PriorityCard, DayPlan, FocusSession, Settings } from './store';
 import { getDemoData } from './demoData';
 
 interface StoreContextType {
@@ -8,6 +8,7 @@ interface StoreContextType {
   addPriority: (priority: PriorityCard) => void;
   updatePriority: (id: string, updates: Partial<PriorityCard>) => void;
   updateDayPlan: (id: string, updates: Partial<DayPlan>) => void;
+  addFocusSession: (session: FocusSession) => void;
   clearData: () => void;
   loadDemoData: () => void;
   resetApp: () => void;
@@ -44,6 +45,10 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const addFocusSession = (session: FocusSession) => {
+    setState(prev => ({ ...prev, focusSessions: [...prev.focusSessions, session] }));
+  };
+
   const clearData = () => {
     const defaultState = store.load();
     defaultState.priorities = [];
@@ -77,6 +82,7 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
       addPriority,
       updatePriority,
       updateDayPlan,
+      addFocusSession,
       clearData,
       loadDemoData,
       resetApp

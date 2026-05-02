@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppStoreProvider, useAppStore } from "@/lib/storeContext";
+import { TimerProvider } from "@/lib/timerContext";
 import { AppShell } from "@/components/layout/AppShell";
 import NotFound from "@/pages/not-found";
 
@@ -44,10 +45,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AppStoreProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <RouteGuard />
-          </WouterRouter>
-          <Toaster />
+          <TimerProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <RouteGuard />
+            </WouterRouter>
+            <Toaster />
+          </TimerProvider>
         </AppStoreProvider>
       </TooltipProvider>
     </QueryClientProvider>
