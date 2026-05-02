@@ -2,7 +2,7 @@ import React, {
   createContext, useContext, useState, useEffect,
   useRef, useCallback, ReactNode,
 } from 'react';
-import { useAppStore } from './storeContext';
+import { StoreContext } from './storeContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface TimerContextType {
@@ -47,8 +47,10 @@ function playChime() {
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function TimerProvider({ children }: { children: ReactNode }) {
-  const { state, addFocusSession } = useAppStore();
-  const defaultMins = state.settings?.defaultFocusMinutes ?? 30;
+  const storeCtx = useContext(StoreContext);
+  const state = storeCtx?.state;
+  const addFocusSession = storeCtx?.addFocusSession;
+  const defaultMins = state?.settings?.defaultFocusMinutes ?? 30;
 
   const [duration,         setDurationState]  = useState(defaultMins);
   const [timeLeft,         setTimeLeft]       = useState(defaultMins * 60);
@@ -104,7 +106,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     playChime();
 
     // Persist session to store (only when setup is complete)
-    if (state.settings && sessionRef.current) {
+    if (state?.settings && sessionRef.current && addFocusSession) {
       const s = sessionRef.current;
       sessionRef.current = null;
       addFocusSession({

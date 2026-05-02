@@ -145,6 +145,8 @@ export default function TrendsPage() {
     [weekDates, planByDate],
   );
 
+  const activeDays: number[] = state.settings?.activeDays ?? [1, 2, 3, 4, 5];
+
   const activeDaySet = useMemo(
     () => new Set(activeDays.length > 0 ? activeDays : [0,1,2,3,4,5,6]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,8 +177,6 @@ export default function TrendsPage() {
     () => state.priorities.filter(p => p.isCarryover && p.status !== 'completed').length,
     [state.priorities],
   );
-
-  const activeDays: number[] = state.settings?.activeDays ?? [1, 2, 3, 4, 5];
 
   const { streak, gapDays, lastActiveDaysAgo } = useMemo(
     () => computeStreakDetails(state.dayPlans, activeDays),

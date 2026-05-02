@@ -120,6 +120,8 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+export { StoreContext };
+
 export const useAppStore = () => {
   const ctx = useContext(StoreContext);
   if (!ctx) throw new Error('useAppStore must be used within AppStoreProvider');
