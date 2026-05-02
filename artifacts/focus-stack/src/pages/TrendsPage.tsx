@@ -35,22 +35,40 @@ function getWeekDates(weekStartDay: 0 | 1, offset: number): string[] {
   });
 }
 
-function computeStreak(dayPlans: DayPlan[]): number {
+function computeStreakDetails(dayPlans: DayPlan[]): {
+  streak: number;
+  gapDays: number;
+  lastActiveDaysAgo: number | null;
+} {
   const active = new Set(
     dayPlans
       .filter(dp => dp.selectedPriorityIds.length > 0 || dp.zeroPriorityDay)
       .map(dp => dp.date)
   );
+  const today = new Date();
   let streak = 0;
-  const cursor = new Date();
+  let gapDays = 0;
+  let lastActiveDaysAgo: number | null = null;
+  let foundFirst = false;
+
   for (let i = 0; i < 365; i++) {
-    const d = new Date(cursor);
-    d.setDate(cursor.getDate() - i);
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
     const key = d.toISOString().split('T')[0];
-    if (active.has(key)) streak++;
-    else if (i > 0) break; // allow today to be empty without breaking streak
+
+    if (active.has(key)) {
+      if (!foundFirst) { foundFirst = true; lastActiveDaysAgo = i; }
+      streak++;
+    } else {
+      if (!foundFirst) {
+        if (i > 0) gapDays++;     // today empty doesn't count as gap
+        if (gapDays > 60) break;
+      } else {
+        break;                     // streak broken
+      }
+    }
   }
-  return streak;
+  return { streak, gapDays, lastActiveDaysAgo };
 }
 
 function weekLabel(offset: number): string {
@@ -146,7 +164,24 @@ export default function TrendsPage() {
     [state.priorities],
   );
 
-  const streak = useMemo(() => computeStreak(state.dayPlans), [state.dayPlans]);
+  const { streak, gapDays, lastActiveDaysAgo } = useMemo(
+    () => computeStreakDetails(state.dayPlans),
+    [state.dayPlans],
+  );
+
+  const streakSubtitle = (() => {
+    if (streak > 0)                         return 'Days planned';
+    if (lastActiveDaysAgo === null)          return 'No plans yet';
+    if (gapDays === 1)                       return 'Missed yesterday';
+    if (gapDays <= 6)                        return `Gap: ${gapDays} days`;
+    return `Last: ${lastActiveDaysAgo}d ago`;
+  })();
+
+  const streakSubtitleStyle: React.CSSProperties = (() => {
+    if (streak > 0 || lastActiveDaysAgo === null) return {};
+    if (gapDays <= 3) return { color: 'rgba(180,120,40,0.85)' };
+    return { color: 'rgba(180,70,60,0.80)' };
+  })();
 
   const insightText = buildInsight(completionPct, focusedDays, carryoverCount, totalPlanned, zeroDays);
 
@@ -203,7 +238,7 @@ export default function TrendsPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiWidget title="Streak"       value={streak}         subtitle="Days planned"       />
+        <KpiWidget title="Streak" value={streak} subtitle={streakSubtitle} subtitleStyle={streakSubtitleStyle} />
         <KpiWidget title="Planned"      value={totalPlanned}   subtitle="Priorities set"     />
         <KpiWidget title="Completed"    value={totalCompleted} subtitle="Priorities finished" />
         <KpiWidget title="Focused Days" value={focusedDays}    subtitle="Days with 3–5 items" />
