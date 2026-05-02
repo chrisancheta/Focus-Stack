@@ -37,7 +37,9 @@ function getWeekDates(weekStartDay: 0 | 1, offset: number): string[] {
 
 function computeStreak(dayPlans: DayPlan[]): number {
   const active = new Set(
-    dayPlans.filter(dp => dp.selectedPriorityIds.length > 0).map(dp => dp.date)
+    dayPlans
+      .filter(dp => dp.selectedPriorityIds.length > 0 || dp.zeroPriorityDay)
+      .map(dp => dp.date)
   );
   let streak = 0;
   const cursor = new Date();
@@ -62,7 +64,11 @@ function buildInsight(
   focusedDays: number,
   carryover: number,
   totalPlanned: number,
+  zeroDays: number,
 ): string {
+  if (totalPlanned === 0 && zeroDays > 0) {
+    return `${zeroDays} day${zeroDays > 1 ? 's' : ''} intentionally kept open this week.`;
+  }
   if (totalPlanned === 0) {
     return 'No priorities recorded for this week yet. Head to Home to add your first task.';
   }
@@ -117,17 +123,18 @@ export default function TrendsPage() {
     [weekDates, planByDate],
   );
 
-  const { totalPlanned, totalCompleted, focusedDays } = useMemo(() => {
-    let planned = 0, completed = 0, focused = 0;
+  const { totalPlanned, totalCompleted, focusedDays, zeroDays } = useMemo(() => {
+    let planned = 0, completed = 0, focused = 0, zero = 0;
     weekDates.forEach(d => {
       const dp = planByDate.get(d);
       if (!dp) return;
+      if (dp.zeroPriorityDay && dp.selectedPriorityIds.length === 0) { zero++; return; }
       planned   += dp.selectedPriorityIds.length;
       completed += dp.completedPriorityIds.length;
       const n = dp.selectedPriorityIds.length;
       if (n >= 3 && n <= 5) focused++;
     });
-    return { totalPlanned: planned, totalCompleted: completed, focusedDays: focused };
+    return { totalPlanned: planned, totalCompleted: completed, focusedDays: focused, zeroDays: zero };
   }, [weekDates, planByDate]);
 
   const completionPct = totalPlanned > 0
@@ -141,7 +148,7 @@ export default function TrendsPage() {
 
   const streak = useMemo(() => computeStreak(state.dayPlans), [state.dayPlans]);
 
-  const insightText = buildInsight(completionPct, focusedDays, carryoverCount, totalPlanned);
+  const insightText = buildInsight(completionPct, focusedDays, carryoverCount, totalPlanned, zeroDays);
 
   return (
     <div className="space-y-4">

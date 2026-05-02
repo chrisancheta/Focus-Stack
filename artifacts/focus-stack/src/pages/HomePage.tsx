@@ -83,6 +83,27 @@ export default function HomePage() {
 
   const handleComplete = (id: string) => updatePriority(id, { status: 'completed', progressPercent: 100 });
 
+  const handleKeepOpen = () => {
+    if (todayPlan) {
+      updateDayPlan(todayPlan.id, { zeroPriorityDay: true });
+    } else {
+      addDayPlan({
+        id: generateId(),
+        date: today,
+        weekStartDay: state.settings?.weekStartDay ?? 1,
+        selectedPriorityIds: [],
+        candidatePriorityIds: [],
+        completedPriorityIds: [],
+        checkInCompleted: false,
+        zeroPriorityDay: true,
+      });
+    }
+  };
+
+  const handleCancelZeroDay = () => {
+    if (todayPlan) updateDayPlan(todayPlan.id, { zeroPriorityDay: false });
+  };
+
   const handleCheckInSave = (updates: { id: string; action: 'done' | 'carryover' | 'drop' | null }[]) => {
     const newCompletedIds: string[] = [];
     updates.forEach(({ id, action }) => {
@@ -121,11 +142,33 @@ export default function HomePage() {
 
   const dismissCarryover = (id: string) => updatePriority(id, { isCarryover: false });
 
-  const isEmpty = !todayPlan || todayPlan.selectedPriorityIds.length === 0;
+  const isZeroDay = !!(todayPlan?.zeroPriorityDay && todayPlan.selectedPriorityIds.length === 0);
+  const isEmpty = !isZeroDay && (!todayPlan || todayPlan.selectedPriorityIds.length === 0);
 
   return (
     <div className="space-y-4">
-      {isEmpty ? (
+      {isZeroDay ? (
+        <div className="rounded-3xl p-6" style={GLASS}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-[#222527] tracking-tight mb-1">Today is open</h2>
+              <p className="text-sm text-[#222527]/50">No tasks scheduled. Space to think.</p>
+            </div>
+            <span
+              className="shrink-0 text-xs font-semibold px-3 py-1 rounded-full"
+              style={{ background: 'rgba(107,143,110,0.15)', color: '#6B8F6E', border: '1px solid rgba(107,143,110,0.25)' }}
+            >
+              Open day
+            </span>
+          </div>
+          <button
+            onClick={handleCancelZeroDay}
+            className="mt-5 text-xs text-[#222527]/40 hover:text-[#222527]/70 transition-colors underline-offset-2 hover:underline"
+          >
+            Add tasks instead
+          </button>
+        </div>
+      ) : isEmpty ? (
         <div className="flex flex-col gap-4">
           <div className="rounded-3xl p-6" style={GLASS}>
             <h2 className="text-lg font-semibold text-[#222527] tracking-tight mb-1">Set Today's Priorities</h2>
@@ -137,7 +180,7 @@ export default function HomePage() {
             />
             <div className="flex items-center gap-3 mt-4">
               <button
-                onClick={() => handleQuickAdd('Today is open')}
+                onClick={handleKeepOpen}
                 className="text-xs text-[#222527]/45 hover:text-[#222527]/70 transition-colors underline-offset-2 hover:underline"
               >
                 Keep today open
@@ -149,24 +192,42 @@ export default function HomePage() {
             <p className="text-sm font-medium text-[#222527]/60 mb-1">No priorities selected yet.</p>
             <p className="text-xs text-[#222527]/40">Add one above or keep today open for focused work.</p>
             <div className="flex gap-2 flex-wrap mt-4">
-              {['Add your first priority', 'Keep today open'].map(chip => (
-                <button
-                  key={chip}
-                  className="text-xs px-3 py-1.5 rounded-full font-medium text-[#222527]/60 hover:text-[#222527] transition-all"
-                  style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.65)' }}
-                >
-                  {chip}
-                </button>
-              ))}
+              <button
+                onClick={() => document.querySelector<HTMLInputElement>('input[placeholder]')?.focus()}
+                className="text-xs px-3 py-1.5 rounded-full font-medium text-[#222527]/60 hover:text-[#222527] transition-all"
+                style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.65)' }}
+              >
+                Add your first priority
+              </button>
+              <button
+                onClick={handleKeepOpen}
+                className="text-xs px-3 py-1.5 rounded-full font-medium text-[#222527]/60 hover:text-[#222527] transition-all"
+                style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.65)' }}
+              >
+                Keep today open
+              </button>
             </div>
           </div>
 
           <div className="rounded-2xl p-4" style={GLASS_SUBTLE}>
             <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 mb-3">Today</p>
-            <div className="flex gap-6 text-sm text-[#222527]/60">
-              <div><span className="text-xl font-light text-[#222527]">0</span><br /><span className="text-xs">selected</span></div>
-              <div><span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span><br /><span className="text-xs">carryover</span></div>
-              <div><span className="text-sm font-medium text-[#222527]/70">4:45 PM</span><br /><span className="text-xs">check-in</span></div>
+            <div className="flex items-end justify-between gap-4">
+              <div className="flex gap-6 text-sm text-[#222527]/60">
+                <div><span className="text-xl font-light text-[#222527]">0</span><br /><span className="text-xs">selected</span></div>
+                <div><span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span><br /><span className="text-xs">carryover</span></div>
+                <div>
+                  <span className="text-sm font-medium text-[#222527]/70">
+                    {state.settings?.reminderTimeLocal
+                      ? (() => {
+                          const [h, m] = state.settings.reminderTimeLocal.split(':').map(Number);
+                          const d = new Date(); d.setHours(h, m);
+                          return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                        })()
+                      : '4:45 PM'}
+                  </span>
+                  <br /><span className="text-xs">check-in</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
