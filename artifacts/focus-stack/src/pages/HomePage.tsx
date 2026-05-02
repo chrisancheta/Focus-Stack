@@ -185,6 +185,15 @@ export default function HomePage() {
 
   const dismissCarryover = (id: string) => updatePriority(id, { isCarryover: false });
 
+  const handleClearCompleted = () => {
+    if (!todayPlan) return;
+    const completedSet = new Set(todayPlan.completedPriorityIds);
+    updateDayPlan(todayPlan.id, {
+      selectedPriorityIds: todayPlan.selectedPriorityIds.filter(id => !completedSet.has(id)),
+      completedPriorityIds: [],
+    });
+  };
+
   const isZeroDay = !!(todayPlan?.zeroPriorityDay && todayPlan.selectedPriorityIds.length === 0);
   const isEmpty = !isZeroDay && (!todayPlan || todayPlan.selectedPriorityIds.length === 0);
 
@@ -356,7 +365,19 @@ export default function HomePage() {
                 </CollapsibleSection>
               )}
               {completedPriorities.length > 0 && (
-                <CollapsibleSection title="Completed Today" count={completedPriorities.length}>
+                <CollapsibleSection
+                  title="Completed Today"
+                  count={completedPriorities.length}
+                  action={
+                    <button
+                      onClick={e => { e.stopPropagation(); handleClearCompleted(); }}
+                      className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-all hover:opacity-75"
+                      style={{ background: 'rgba(255,255,255,0.50)', color: 'rgba(34,37,39,0.50)', border: '1px solid rgba(255,255,255,0.65)' }}
+                    >
+                      Clear
+                    </button>
+                  }
+                >
                   <div className="space-y-2 mt-2">
                     {completedPriorities.map(p => (
                       <PriorityCard

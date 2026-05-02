@@ -9,9 +9,10 @@ interface CollapsibleSectionProps {
   defaultOpen?: boolean;
   children: React.ReactNode;
   className?: string;
+  action?: React.ReactNode;
 }
 
-export function CollapsibleSection({ title, count, defaultOpen = false, children, className }: CollapsibleSectionProps) {
+export function CollapsibleSection({ title, count, defaultOpen = false, children, className, action }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
@@ -38,11 +39,14 @@ export function CollapsibleSection({ title, count, defaultOpen = false, children
             </span>
           )}
         </div>
-        <CollapsibleTrigger asChild>
-          <button className="p-1 text-[#222527]/40 hover:text-[#222527]/70 transition-colors rounded-lg">
-            {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
-        </CollapsibleTrigger>
+        <div className="flex items-center gap-2">
+          {action}
+          <CollapsibleTrigger asChild>
+            <button className="p-1 text-[#222527]/40 hover:text-[#222527]/70 transition-colors rounded-lg">
+              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          </CollapsibleTrigger>
+        </div>
       </div>
       <CollapsibleContent className="px-4 pb-4 space-y-2 animate-in slide-in-from-top-1">
         {children}
