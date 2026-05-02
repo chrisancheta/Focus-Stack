@@ -3,6 +3,7 @@ import { useAppStore } from '@/lib/storeContext';
 import { PriorityCard } from '@/components/priority/PriorityCard';
 import { QuickAddInput } from '@/components/priority/QuickAddInput';
 import { PriorityDetailModal } from '@/components/priority/PriorityDetailModal';
+import { CheckInModal } from '@/components/shared/CheckInModal';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import { generateId, getTodayISODate } from '@/lib/utils';
 import { DayPlan } from '@/lib/store';
@@ -24,6 +25,7 @@ const GLASS_SUBTLE = {
 export default function HomePage() {
   const { state, addPriority, updatePriority, deletePriority, addDayPlan, updateDayPlan } = useAppStore();
   const [selectedPriorityId, setSelectedPriorityId] = useState<string | null>(null);
+  const [showCheckIn, setShowCheckIn] = useState(false);
 
   const today = getTodayISODate();
   const todayPlan = state.dayPlans.find(dp => dp.date === today);
@@ -80,6 +82,28 @@ export default function HomePage() {
   };
 
   const handleComplete = (id: string) => updatePriority(id, { status: 'completed', progressPercent: 100 });
+
+  const handleCheckInSave = (updates: { id: string; action: 'done' | 'carryover' | 'drop' | null }[]) => {
+    const newCompletedIds: string[] = [];
+    updates.forEach(({ id, action }) => {
+      if (action === 'done') {
+        updatePriority(id, { status: 'completed', progressPercent: 100, isCarryover: false });
+        newCompletedIds.push(id);
+      } else if (action === 'carryover') {
+        updatePriority(id, { isCarryover: true });
+      } else if (action === 'drop') {
+        updatePriority(id, { status: 'dropped', isCarryover: false });
+      }
+    });
+    if (todayPlan) {
+      const merged = Array.from(new Set([...todayPlan.completedPriorityIds, ...newCompletedIds]));
+      updateDayPlan(todayPlan.id, {
+        checkInCompleted: true,
+        checkInCompletedAt: new Date().toISOString(),
+        completedPriorityIds: merged,
+      });
+    }
+  };
 
   const handleMoveUp = (id: string) => {
     if (!todayPlan) return;
@@ -245,27 +269,49 @@ export default function HomePage() {
 
           <div className="rounded-2xl p-4" style={GLASS_SUBTLE}>
             <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 mb-3">Today</p>
-            <div className="flex gap-6 text-sm">
-              <div>
-                <span className="text-xl font-light text-[#222527]">{selectedPriorities.length}</span>
-                <br /><span className="text-xs text-[#222527]/50">selected</span>
+            <div className="flex items-end justify-between gap-4">
+              <div className="flex gap-6 text-sm">
+                <div>
+                  <span className="text-xl font-light text-[#222527]">{selectedPriorities.length}</span>
+                  <br /><span className="text-xs text-[#222527]/50">selected</span>
+                </div>
+                <div>
+                  <span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span>
+                  <br /><span className="text-xs text-[#222527]/50">carryover</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-[#222527]/70">
+                    {state.settings?.reminderTimeLocal
+                      ? (() => {
+                          const [h, m] = state.settings.reminderTimeLocal.split(':').map(Number);
+                          const d = new Date(); d.setHours(h, m);
+                          return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                        })()
+                      : '4:45 PM'}
+                  </span>
+                  <br /><span className="text-xs text-[#222527]/50">check-in</span>
+                </div>
               </div>
-              <div>
-                <span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span>
-                <br /><span className="text-xs text-[#222527]/50">carryover</span>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-[#222527]/70">
-                  {state.settings?.reminderTimeLocal
-                    ? (() => {
-                        const [h, m] = state.settings.reminderTimeLocal.split(':').map(Number);
-                        const d = new Date(); d.setHours(h, m);
-                        return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                      })()
-                    : '4:45 PM'}
-                </span>
-                <br /><span className="text-xs text-[#222527]/50">check-in</span>
-              </div>
+
+              {todayPlan && (
+                <button
+                  onClick={() => setShowCheckIn(true)}
+                  className="shrink-0 h-9 px-4 rounded-full text-xs font-semibold transition-all hover:opacity-85"
+                  style={{
+                    background: todayPlan.checkInCompleted
+                      ? 'rgba(107,143,110,0.15)'
+                      : '#222527',
+                    color: todayPlan.checkInCompleted
+                      ? '#6B8F6E'
+                      : 'white',
+                    border: todayPlan.checkInCompleted
+                      ? '1px solid rgba(107,143,110,0.30)'
+                      : 'none',
+                  }}
+                >
+                  {todayPlan.checkInCompleted ? '✓ Checked in' : 'Check In'}
+                </button>
+              )}
             </div>
           </div>
         </>
@@ -277,6 +323,15 @@ export default function HomePage() {
         onClose={() => setSelectedPriorityId(null)}
         onSave={updatePriority}
         onDelete={(id) => { deletePriority(id); setSelectedPriorityId(null); }}
+      />
+
+      <CheckInModal
+        isOpen={showCheckIn}
+        onClose={() => setShowCheckIn(false)}
+        priorities={todayPlan
+          ? priorities.filter(p => todayPlan.selectedPriorityIds.includes(p.id))
+          : []}
+        onSave={handleCheckInSave}
       />
     </div>
   );
