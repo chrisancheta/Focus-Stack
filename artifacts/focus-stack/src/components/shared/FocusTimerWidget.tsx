@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/storeContext';
 
@@ -10,7 +10,7 @@ interface FocusTimerWidgetProps {
 
 // ── Clock SVG geometry ────────────────────────────────────────────────────────
 const SVG_SIZE    = 340;
-const CENTER      = SVG_SIZE / 2;      // 170
+const CENTER      = SVG_SIZE / 2;
 const TICK_R_OUT  = 156;
 const TICK_R_LONG = 140;
 const TICK_R_SHORT= 149;
@@ -19,23 +19,15 @@ const PROGRESS_C  = 2 * Math.PI * PROGRESS_R;
 const BG_R        = 162;
 
 // ── Orbital button layout ─────────────────────────────────────────────────────
-// Outer container is square; clock SVG is centred inside it.
-// Buttons are absolutely positioned on an invisible orbit ring.
-const CONTAINER  = 440;                         // container px (must fit all orbiting buttons)
-const CX         = CONTAINER / 2;               // 220 – clock centre in container space
+const CONTAINER  = 440;
+const CX         = CONTAINER / 2;               // 220
 const CY         = CONTAINER / 2;               // 220
-const SVG_OFFSET = (CONTAINER - SVG_SIZE) / 2;  // 50 – top-left of SVG inside container
-const ORBIT_R    = 196;                         // orbit radius (from clock centre)
-const BTN_S      = 44;                          // preset & reset button size (px)
-const PLAY_S     = 56;                          // play/pause button size (px)
+const SVG_OFFSET = (CONTAINER - SVG_SIZE) / 2;  // 50
+const ORBIT_R    = 196;
+const BTN_S      = 44;
 
-/**
- * Convert clock-face hour to an absolute {left, top} for a centred button.
- * Hour 3 = right, 6 = bottom, 9 = left, 12 = top.
- */
 function clockPos(hour: number, btnSize: number) {
-  const deg = hour * 30;                          // clock degree (0 = 12, CW)
-  const rad = (deg * Math.PI) / 180;
+  const rad = (hour * 30 * Math.PI) / 180;
   const x   = CX + ORBIT_R * Math.sin(rad);
   const y   = CY - ORBIT_R * Math.cos(rad);
   return { left: x - btnSize / 2, top: y - btnSize / 2 };
@@ -46,7 +38,34 @@ function polarToXY(cx: number, cy: number, r: number, deg: number) {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-// Shared styles for ghost/inactive buttons
+/** Synthesise a soft 3-note chime using the Web Audio API. */
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const notes = [
+      { freq: 523.25, delay: 0.0 },    // C5
+      { freq: 659.25, delay: 0.28 },   // E5
+      { freq: 783.99, delay: 0.56 },   // G5
+    ];
+    notes.forEach(({ freq, delay }) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + delay;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.30, t + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+      osc.start(t);
+      osc.stop(t + 1.8);
+    });
+  } catch (_) {
+    // Web Audio not available — silent fail
+  }
+}
+
 const ghostStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.55)',
   backdropFilter: 'blur(10px)',
@@ -60,20 +79,35 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [timeLeft, setTimeLeft]               = useState(initialMinutes * 60);
   const [isRunning, setIsRunning]             = useState(false);
+  const [isDone, setIsDone]                   = useState(false);
   const [duration, setDuration]               = useState(initialMinutes);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => { setTimeLeft(duration * 60); setIsRunning(false); }, [duration]);
+  // Reset when duration changes
+  useEffect(() => {
+    setTimeLeft(duration * 60);
+    setIsRunning(false);
+    setIsDone(false);
+  }, [duration]);
 
+  // Countdown tick
   useEffect(() => {
     if (isRunning) {
       timerRef.current = setInterval(() => {
         setTimeLeft(prev => {
-          if (prev <= 1) { clearInterval(timerRef.current!); setIsRunning(false); return 0; }
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            setIsRunning(false);
+            setIsDone(true);
+            playChime();
+            return 0;
+          }
           return prev - 1;
         });
       }, 1000);
-    } else if (timerRef.current) clearInterval(timerRef.current);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isRunning]);
 
@@ -84,11 +118,41 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
   const progress   = totalSecs > 0 ? elapsed / totalSecs : 0;
   const dashOffset = PROGRESS_C * (1 - progress);
 
-  const linked    = priorityId ? state.priorities.find(p => p.id === priorityId) : null;
-  const isCustom  = ![30, 60].includes(duration);
-  const statusLabel = linked
-    ? (linked.title.length > 18 ? linked.title.slice(0, 18) + '…' : linked.title)
-    : isRunning ? 'IN FOCUS' : progress > 0 ? 'PAUSED' : 'READY';
+  const linked   = priorityId ? state.priorities.find(p => p.id === priorityId) : null;
+  const isCustom = ![30, 60].includes(duration);
+
+  // Status label shown below the countdown
+  let statusLabel: string;
+  if (linked) {
+    const t = linked.title;
+    statusLabel = t.length > 18 ? t.slice(0, 18) + '…' : t;
+  } else if (isDone) {
+    statusLabel = 'DONE';
+  } else if (isRunning) {
+    statusLabel = 'IN FOCUS';
+  } else if (progress > 0) {
+    statusLabel = 'CLICK TO RESUME';
+  } else {
+    statusLabel = 'CLICK TO START';
+  }
+
+  // Clicking the clock face starts / pauses / resets after done
+  const handleClockClick = useCallback(() => {
+    if (isDone) {
+      // Reset
+      setTimeLeft(duration * 60);
+      setIsDone(false);
+      setIsRunning(false);
+    } else {
+      setIsRunning(r => !r);
+    }
+  }, [isDone, duration]);
+
+  const handleReset = useCallback(() => {
+    setIsRunning(false);
+    setIsDone(false);
+    setTimeLeft(duration * 60);
+  }, [duration]);
 
   const ticks = Array.from({ length: 60 }, (_, i) => {
     const isLong = i % 5 === 0;
@@ -104,7 +168,6 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
     if (v > 0 && v <= 240) { setDuration(v); setShowCustomInput(false); setCustomInput(''); }
   };
 
-  // Preset button config: [label, hour, value]
   const presets: [string, number, number | 'custom'][] = [
     ['30m', 2, 30],
     ['60m', 3, 60],
@@ -113,18 +176,14 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
 
   return (
     <div className="flex items-center justify-center select-none">
-      {/* ── Orbital container ─────────────────────────────────────────────
-          Fixed square. Clock SVG is centred. All buttons are positioned
-          absolutely on the invisible orbit ring (radius = ORBIT_R from CX,CY).
-      ──────────────────────────────────────────────────────────────────── */}
-      <div
-        className="relative"
-        style={{ width: CONTAINER, height: CONTAINER }}
-      >
-        {/* ── Clock face SVG ────────────────────────────────────────────── */}
+      <div className="relative" style={{ width: CONTAINER, height: CONTAINER }}>
+
+        {/* ── Clock face ────────────────────────────────────────────────── */}
         <div
           className="absolute"
-          style={{ left: SVG_OFFSET, top: SVG_OFFSET }}
+          style={{ left: SVG_OFFSET, top: SVG_OFFSET, cursor: 'pointer' }}
+          onClick={handleClockClick}
+          title={isDone ? 'Click to reset' : isRunning ? 'Click to pause' : 'Click to start'}
         >
           <svg
             width={SVG_SIZE} height={SVG_SIZE}
@@ -153,43 +212,52 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
               />
             ))}
 
+            {/* Progress track */}
             <circle cx={CENTER} cy={CENTER} r={PROGRESS_R}
               fill="none" stroke="rgba(144,157,146,0.18)" strokeWidth="4" />
 
+            {/* Progress arc */}
             <circle cx={CENTER} cy={CENTER} r={PROGRESS_R}
-              fill="none" stroke="#222527" strokeWidth="4" strokeLinecap="round"
-              strokeDasharray={PROGRESS_C} strokeDashoffset={dashOffset}
+              fill="none"
+              stroke={isDone ? '#6B8F6E' : '#222527'}
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray={PROGRESS_C}
+              strokeDashoffset={dashOffset}
               transform={`rotate(-90 ${CENTER} ${CENTER})`}
               style={{ transition: 'stroke-dashoffset 0.9s linear' }}
             />
 
+            {/* Countdown */}
             <text x={CENTER} y={CENTER - 10}
               textAnchor="middle" dominantBaseline="middle"
               fontSize="50" fontWeight="300"
               fontFamily="'DM Sans', sans-serif"
-              fill="#222527" letterSpacing="-2"
+              fill={isDone ? '#6B8F6E' : '#222527'}
+              letterSpacing="-2"
             >
               {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
             </text>
 
-            <text x={CENTER} y={CENTER + 28}
+            {/* Status / call-to-action */}
+            <text x={CENTER} y={CENTER + 30}
               textAnchor="middle" dominantBaseline="middle"
-              fontSize="11" fontWeight="400"
+              fontSize="10" fontWeight="400"
               fontFamily="'DM Sans', sans-serif"
-              fill="rgba(34,37,39,0.40)" letterSpacing="1.4"
+              fill={isDone ? '#6B8F6E' : 'rgba(34,37,39,0.42)'}
+              letterSpacing="1.4"
             >
-              {statusLabel}
+              {statusLabel.toUpperCase()}
             </text>
           </svg>
         </div>
 
         {/* ── Preset buttons — 2, 3, 4 o'clock ─────────────────────────── */}
         {presets.map(([label, hour, value]) => {
-          const pos     = clockPos(hour, BTN_S);
+          const pos      = clockPos(hour, BTN_S);
           const isActive = value === 'custom' ? isCustom : duration === value && !isCustom;
 
           if (value === 'custom' && showCustomInput) {
-            // Show a small number input in place of the ··· button
             return (
               <div
                 key="custom-input"
@@ -223,18 +291,17 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
             <button
               key={String(value)}
               onClick={() => {
-                if (value === 'custom') { setShowCustomInput(true); }
+                if (value === 'custom') setShowCustomInput(true);
                 else { setDuration(value); setShowCustomInput(false); }
               }}
-              disabled={isRunning && value !== 'custom'}
+              disabled={isRunning}
               className={cn(
                 'absolute rounded-full text-sm font-medium transition-all disabled:opacity-40 flex items-center justify-center',
                 isActive ? 'text-white shadow-md' : 'text-[#222527]/70 hover:text-[#222527]',
               )}
               style={{
                 ...pos,
-                width: BTN_S,
-                height: BTN_S,
+                width: BTN_S, height: BTN_S,
                 ...(isActive
                   ? { background: '#222527', boxShadow: '0 4px 16px rgba(34,37,39,0.28)' }
                   : ghostStyle),
@@ -245,31 +312,11 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
           );
         })}
 
-        {/* ── Play / Pause — 6 o'clock ──────────────────────────────────── */}
-        <button
-          onClick={() => setIsRunning(!isRunning)}
-          className="absolute rounded-full flex items-center justify-center text-white transition-all hover:opacity-85 active:scale-95"
-          style={{
-            ...clockPos(6, PLAY_S),
-            width: PLAY_S,
-            height: PLAY_S,
-            background: '#222527',
-            boxShadow: '0 6px 24px rgba(34,37,39,0.28)',
-          }}
-        >
-          {isRunning ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-        </button>
-
         {/* ── Reset — 8 o'clock ─────────────────────────────────────────── */}
         <button
-          onClick={() => { setIsRunning(false); setTimeLeft(duration * 60); }}
+          onClick={handleReset}
           className="absolute rounded-full flex items-center justify-center text-[#222527]/65 hover:text-[#222527] transition-all"
-          style={{
-            ...clockPos(8, BTN_S),
-            width: BTN_S,
-            height: BTN_S,
-            ...ghostStyle,
-          }}
+          style={{ ...clockPos(8, BTN_S), width: BTN_S, height: BTN_S, ...ghostStyle }}
           title="Reset"
         >
           <RotateCcw className="h-4 w-4" />
