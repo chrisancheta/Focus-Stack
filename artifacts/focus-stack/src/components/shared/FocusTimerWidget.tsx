@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/storeContext';
@@ -10,40 +10,51 @@ interface FocusTimerWidgetProps {
 
 // ── Clock geometry ─────────────────────────────────────────────────────────────
 const SVG_SIZE    = 340;
-const CENTER      = SVG_SIZE / 2;        // 170
+const CENTER      = SVG_SIZE / 2;
 const TICK_R_OUT  = 156;
 const TICK_R_LONG = 140;
 const TICK_R_SHORT= 149;
 const PROGRESS_R  = 128;
 const PROGRESS_C  = 2 * Math.PI * PROGRESS_R;
+const BG_R        = 162;
 
-// BG_R = radius of the fully-opaque masking circle.
-// Right edge in SVG space = 170 + 162 = 332  (leaving 8 px to SVG edge)
-const BG_R = 162;
-
-// ── Crescent geometry ──────────────────────────────────────────────────────────
-// OVERLAP_PX  : how far the crescent panel slides behind the clock (negative margin)
-// Panel left in SVG space = 340 − 90 = 250
-// Circle overlaps panel by: (170+162) − 250 = 82 px  at the vertical centre
-const OVERLAP_PX = 90;
-const PANEL_W    = 136;    // total panel width
-const PANEL_H    = 168;    // fixed panel height (3 × btn40 + 2 × gap14 + 2 × top/bot22 = 168)
-
-// Circle centre in the panel's own coordinate space
-const CX_IN_PANEL = 170 - (SVG_SIZE - OVERLAP_PX);   // = 170 − 250 = −80
+// ── Crescent panel geometry ────────────────────────────────────────────────────
+// The crescent is a standalone shape placed beside the clock with a small gap.
+// It uses a decorative concave-left arc that echoes the clock circle's curvature.
+const PANEL_W     = 84;    // total panel width (px)
+const PANEL_H     = 160;   // total panel height (px)
+const CONCAVITY   = 18;    // how deep the left arc dips into the panel (px) at centre
+const ARC_R       = 162;   // arc radius – matches the clock circle visually
 
 /**
- * Returns a CSS clip-path path() string whose left edge is the concave arc of
- * the clock circle, producing a true crescent silhouette.
+ * Builds the crescent clip-path in the panel's own pixel coordinate space.
+ *
+ *  - Left edge: concave arc (mimics the clock circle's curvature)
+ *  - Right edge: straight with rounded corners
+ *  - The arc starts/ends where the virtual circle intersects the panel top/bottom.
+ *
+ * Virtual circle centre: x = CONCAVITY − ARC_R  (to the left of the panel),
+ *                        y = panelH / 2          (vertically centred)
  */
-function crescentPath(w: number, h: number): string {
+function crescentClipPath(w: number, h: number): string {
   const halfH = h / 2;
-  const disc  = BG_R * BG_R - halfH * halfH;
-  const xArc  = disc > 0 ? Math.max(0, CX_IN_PANEL + Math.sqrt(disc)) : 0;
-  const x     = xArc.toFixed(2);
-  // Arc: start (x, 0) → sweep clockwise (right-bulging) → (x, h)
-  // This creates the concave-left, convex-right crescent edge.
-  return `path('M ${x} 0 A ${BG_R} ${BG_R} 0 0 1 ${x} ${h} L ${w} ${h} L ${w} 0 Z')`;
+  const vCX   = CONCAVITY - ARC_R;          // e.g. 18 − 162 = −144  (left of panel)
+  // vertical distance from centre where virtual circle crosses x = 0
+  const disc  = ARC_R * ARC_R - vCX * vCX;  // = R² − (R−concavity)²
+  const dy    = disc > 0 ? Math.sqrt(disc) : 0;
+  const yTop  = parseFloat(Math.max(0, halfH - dy).toFixed(2));
+  const yBot  = parseFloat(Math.min(h, halfH + dy).toFixed(2));
+  const cr    = 20; // corner radius on the right side
+
+  // Arc: clockwise (sweep=1), short (large-arc=0) from (0,yTop) → (CONCAVITY,halfH) → (0,yBot)
+  return (
+    `path('` +
+    `M 0 ${yTop} ` +
+    `A ${ARC_R} ${ARC_R} 0 0 1 0 ${yBot} ` +
+    `L ${w - cr} ${yBot} Q ${w} ${yBot} ${w} ${yBot - cr} ` +
+    `L ${w} ${yTop + cr} Q ${w} ${yTop} ${w - cr} ${yTop} ` +
+    `Z')`
+  );
 }
 
 function polarToXY(cx: number, cy: number, r: number, deg: number) {
@@ -58,22 +69,7 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
   const [timeLeft, setTimeLeft]               = useState(initialMinutes * 60);
   const [isRunning, setIsRunning]             = useState(false);
   const [duration, setDuration]               = useState(initialMinutes);
-  const [clipPath, setClipPath]               = useState(() => crescentPath(PANEL_W, PANEL_H));
-  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const crescentRef = useRef<HTMLDivElement>(null);
-
-  const updateClip = useCallback(() => {
-    if (crescentRef.current) {
-      const h = crescentRef.current.offsetHeight;
-      setClipPath(crescentPath(PANEL_W, h));
-    }
-  }, []);
-
-  useLayoutEffect(() => {
-    updateClip();
-    window.addEventListener('resize', updateClip);
-    return () => window.removeEventListener('resize', updateClip);
-  }, [updateClip, showCustomInput]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => { setTimeLeft(duration * 60); setIsRunning(false); }, [duration]);
 
@@ -116,26 +112,22 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
     if (v > 0 && v <= 240) { setDuration(v); setShowCustomInput(false); setCustomInput(''); }
   };
 
-  // Button preset content
-  const presets: Array<{ label: string; value: number | 'custom' }> = [
-    { label: '30m', value: 30 },
-    { label: '60m', value: 60 },
-    { label: isCustom ? `${duration}m` : '···', value: 'custom' },
-  ];
+  // Pre-compute the crescent clip-path (static geometry)
+  const clipPath = crescentClipPath(PANEL_W, PANEL_H);
 
   return (
     <div className="flex items-center justify-center select-none">
-      <div className="flex items-center">
+      {/* flex row: clock  ·gap·  crescent — both vertically centred */}
+      <div className="flex items-center gap-3">
 
         {/* ── Clock face ──────────────────────────────────────────────── */}
-        <div className="relative z-10" style={{ flexShrink: 0 }}>
+        <div style={{ flexShrink: 0 }}>
           <svg
             width={SVG_SIZE} height={SVG_SIZE}
             viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
             style={{ filter: 'drop-shadow(0 8px 32px rgba(34,37,39,0.14))', overflow: 'visible' }}
           >
             <defs>
-              {/* Fully-opaque gradient — masks the crescent panel completely */}
               <radialGradient id="clockBg" cx="50%" cy="50%" r="50%">
                 <stop offset="0%"   stopColor="#F5F7F4" stopOpacity="1" />
                 <stop offset="65%"  stopColor="#E8EDE6" stopOpacity="1" />
@@ -143,13 +135,10 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
               </radialGradient>
             </defs>
 
-            {/* Masking fill */}
             <circle cx={CENTER} cy={CENTER} r={BG_R} fill="url(#clockBg)" />
-            {/* Rim */}
             <circle cx={CENTER} cy={CENTER} r={BG_R}
               fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="1.5" />
 
-            {/* 60 tick marks */}
             {ticks.map((t, i) => (
               <line key={i}
                 x1={t.inner.x} y1={t.inner.y}
@@ -160,11 +149,9 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
               />
             ))}
 
-            {/* Progress track */}
             <circle cx={CENTER} cy={CENTER} r={PROGRESS_R}
               fill="none" stroke="rgba(144,157,146,0.18)" strokeWidth="4" />
 
-            {/* Progress arc */}
             <circle cx={CENTER} cy={CENTER} r={PROGRESS_R}
               fill="none" stroke="#222527" strokeWidth="4" strokeLinecap="round"
               strokeDasharray={PROGRESS_C} strokeDashoffset={dashOffset}
@@ -172,7 +159,6 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
               style={{ transition: 'stroke-dashoffset 0.9s linear' }}
             />
 
-            {/* Countdown */}
             <text x={CENTER} y={CENTER - 10}
               textAnchor="middle" dominantBaseline="middle"
               fontSize="50" fontWeight="300"
@@ -182,7 +168,6 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
               {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
             </text>
 
-            {/* Status */}
             <text x={CENTER} y={CENTER + 28}
               textAnchor="middle" dominantBaseline="middle"
               fontSize="11" fontWeight="400"
@@ -193,7 +178,7 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
             </text>
           </svg>
 
-          {/* Controls */}
+          {/* Controls below the clock */}
           <div className="flex justify-center items-center gap-4 mt-5">
             <button
               onClick={() => { setIsRunning(false); setTimeLeft(duration * 60); }}
@@ -214,58 +199,66 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
           </div>
         </div>
 
-        {/* ── Crescent preset panel ─────────────────────────────────────────
-            clip-path cuts the mathematically precise concave left arc.
-            Buttons are absolutely positioned flush-right so they're always
-            inside the visible crescent strip regardless of panel left padding.
-        ──────────────────────────────────────────────────────────────────── */}
+        {/* ── Crescent preset panel ─────────────────────────────────────
+            Standalone crescent shape beside the clock.
+            clip-path: concave left arc + rounded right corners.
+            Buttons are centred inside via absolute positioning.
+        ──────────────────────────────────────────────────────────────── */}
         <div
-          ref={crescentRef}
-          className="z-0 relative"
+          className="relative"
           style={{
-            marginLeft: `-${OVERLAP_PX}px`,
             width: `${PANEL_W}px`,
             height: `${PANEL_H}px`,
             background: 'rgba(255,255,255,0.46)',
             backdropFilter: 'blur(18px)',
             WebkitBackdropFilter: 'blur(18px)',
             clipPath,
-            borderRadius: '0 22px 22px 0',
-            border: '1px solid rgba(255,255,255,0.60)',
-            borderLeft: 'none',
+            boxShadow: '0 4px 20px rgba(34,37,39,0.08)',
           }}
         >
-          {/* Buttons pinned to the right inside the visible crescent strip */}
+          {/* Buttons centred vertically, aligned toward the right */}
           <div
-            className="absolute flex flex-col gap-3.5"
+            className="absolute flex flex-col gap-3"
             style={{ right: '12px', top: '50%', transform: 'translateY(-50%)' }}
           >
             {!showCustomInput ? (
-              presets.map(({ label, value }) => {
-                const isActive = value === 'custom' ? isCustom : duration === value && !isCustom;
-                return (
+              <>
+                {[30, 60].map(min => (
                   <button
-                    key={String(value)}
-                    onClick={() => {
-                      if (value === 'custom') { setShowCustomInput(true); }
-                      else { setDuration(value); setShowCustomInput(false); }
-                    }}
+                    key={min}
+                    onClick={() => setDuration(min)}
                     disabled={isRunning}
                     className={cn(
                       'w-10 h-10 rounded-xl text-sm font-medium transition-all disabled:opacity-40',
-                      isActive
+                      duration === min && !isCustom
                         ? 'bg-[#222527] text-white shadow-sm'
-                        : 'text-[#222527]/75 hover:bg-white/80',
+                        : 'text-[#222527]/70 hover:bg-white/90',
                     )}
-                    style={isActive ? {} : {
-                      background: 'rgba(255,255,255,0.60)',
-                      border: '1px solid rgba(255,255,255,0.75)',
+                    style={duration === min && !isCustom ? {} : {
+                      background: 'rgba(255,255,255,0.65)',
+                      border: '1px solid rgba(255,255,255,0.80)',
                     }}
                   >
-                    {label}
+                    {min}m
                   </button>
-                );
-              })
+                ))}
+                <button
+                  onClick={() => setShowCustomInput(true)}
+                  disabled={isRunning}
+                  className={cn(
+                    'w-10 h-10 rounded-xl text-xs font-medium transition-all disabled:opacity-40',
+                    isCustom
+                      ? 'bg-[#222527] text-white shadow-sm'
+                      : 'text-[#222527]/70 hover:bg-white/90',
+                  )}
+                  style={isCustom ? {} : {
+                    background: 'rgba(255,255,255,0.65)',
+                    border: '1px solid rgba(255,255,255,0.80)',
+                  }}
+                >
+                  {isCustom ? `${duration}m` : '···'}
+                </button>
+              </>
             ) : (
               <>
                 <input
@@ -283,14 +276,15 @@ export function FocusTimerWidget({ initialMinutes = 30, priorityId }: FocusTimer
                 />
                 <button
                   onClick={handleSetCustom}
-                  className="w-10 h-8 rounded-lg text-[11px] font-medium text-[#222527]/70 hover:text-[#222527] transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.75)' }}
+                  className="w-10 h-9 rounded-xl text-[11px] font-medium text-[#222527]/70 hover:text-[#222527] transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.80)' }}
                 >
                   Set
                 </button>
                 <button
                   onClick={() => setShowCustomInput(false)}
-                  className="w-10 h-8 rounded-lg text-[11px] text-[#222527]/50 hover:text-[#222527] transition-colors"
+                  className="w-10 h-9 rounded-xl text-xs text-[#222527]/50 hover:text-[#222527] transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.50)', border: '1px solid rgba(255,255,255,0.70)' }}
                 >
                   ✕
                 </button>
