@@ -3,6 +3,7 @@ import { ChevronDown, X, Link2 } from 'lucide-react';
 import { FocusTimerWidget } from '@/components/shared/FocusTimerWidget';
 import { useAppStore } from '@/lib/storeContext';
 import { useTimer } from '@/lib/timerContext';
+import { getTodayISODate } from '@/lib/utils';
 
 export default function FocusPage() {
   const { state } = useAppStore();
@@ -28,8 +29,9 @@ export default function FocusPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, [showPicker]);
 
+  const today = getTodayISODate();
   const todaySessions = state.focusSessions.filter(
-    s => new Date(s.startedAt).toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+    s => s.startedAt.slice(0, 10) === today
   );
 
   const bucketLabel: Record<string, string> = {

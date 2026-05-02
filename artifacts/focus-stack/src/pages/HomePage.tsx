@@ -5,6 +5,7 @@ import { QuickAddInput } from '@/components/priority/QuickAddInput';
 import { PriorityDetailModal } from '@/components/priority/PriorityDetailModal';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import { generateId, getTodayISODate } from '@/lib/utils';
+import { DayPlan } from '@/lib/store';
 
 const GLASS = {
   background: 'rgba(255,255,255,0.45)',
@@ -21,7 +22,7 @@ const GLASS_SUBTLE = {
 };
 
 export default function HomePage() {
-  const { state, addPriority, updatePriority, updateDayPlan } = useAppStore();
+  const { state, addPriority, updatePriority, deletePriority, addDayPlan, updateDayPlan } = useAppStore();
   const [selectedPriorityId, setSelectedPriorityId] = useState<string | null>(null);
 
   const today = getTodayISODate();
@@ -37,9 +38,11 @@ export default function HomePage() {
     ? priorities.filter(p => todayPlan.candidatePriorityIds.includes(p.id))
     : [];
 
+  // Only show priorities actually recorded as completed today — avoid leaking
+  // globally-completed priorities from previous days into the current list.
   const completedPriorities = todayPlan
-    ? priorities.filter(p => todayPlan.completedPriorityIds.includes(p.id) || p.status === 'completed')
-    : priorities.filter(p => p.status === 'completed');
+    ? priorities.filter(p => todayPlan.completedPriorityIds.includes(p.id))
+    : [];
 
   const handleQuickAdd = (title: string) => {
     const newPriority = {
@@ -61,15 +64,18 @@ export default function HomePage() {
         selectedPriorityIds: [...todayPlan.selectedPriorityIds, newPriority.id],
       });
     } else {
-      updateDayPlan(generateId(), {
+      // No day plan exists yet — create one instead of trying to update a phantom ID
+      const newPlan: DayPlan = {
+        id: generateId(),
         date: today,
-        weekStartDay: state.settings?.weekStartDay || 1,
+        weekStartDay: state.settings?.weekStartDay ?? 1,
         selectedPriorityIds: [newPriority.id],
         candidatePriorityIds: [],
         completedPriorityIds: [],
         checkInCompleted: false,
         zeroPriorityDay: false,
-      });
+      };
+      addDayPlan(newPlan);
     }
   };
 
@@ -270,7 +276,7 @@ export default function HomePage() {
         isOpen={!!selectedPriorityId}
         onClose={() => setSelectedPriorityId(null)}
         onSave={updatePriority}
-        onDelete={() => {}}
+        onDelete={(id) => { deletePriority(id); setSelectedPriorityId(null); }}
       />
     </div>
   );

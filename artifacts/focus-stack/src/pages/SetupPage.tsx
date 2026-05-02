@@ -17,7 +17,7 @@ export default function SetupPage() {
 
   const [weekStart, setWeekStart] = useState<'0' | '1'>('1');
   const [reminder, setReminder] = useState('16:45');
-  const [durationMins, setDurationMins] = useState<30 | 60>(30);
+  const [durationMins, setDurationMins] = useState<30 | 45 | 60>(30);
   const [carryover, setCarryover] = useState(true);
 
   const handleSave = () => {
@@ -95,7 +95,7 @@ export default function SetupPage() {
           <div className="space-y-2">
             <label className="text-xs font-semibold text-[#222527]/60 uppercase tracking-wider">Default focus duration</label>
             <div className="flex gap-2">
-              {([30, 60] as const).map(min => (
+              {([30, 45, 60] as const).map(min => (
                 <button
                   key={min}
                   onClick={() => setDurationMins(min)}
@@ -111,14 +111,6 @@ export default function SetupPage() {
                   {min}m
                 </button>
               ))}
-              <button
-                onClick={() => setDurationMins(60)}
-                className="flex-1 h-11 rounded-xl text-sm font-medium text-[#222527]/70 hover:text-[#222527] transition-all"
-                style={GLASS_INPUT}
-                data-testid="duration-custom"
-              >
-                Custom
-              </button>
             </div>
           </div>
 

@@ -143,15 +143,15 @@ export function PriorityCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="text-sm">
-              {!isCompleted && (
+              {!isCompleted && onComplete && (
                 <DropdownMenuItem onClick={onComplete}>
                   <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Complete
                 </DropdownMenuItem>
               )}
-              {!isCompleted && (
+              {!isCompleted && onDefer && (
                 <DropdownMenuItem onClick={onDefer}>Defer to Tomorrow</DropdownMenuItem>
               )}
-              {!isCompleted && (
+              {!isCompleted && onStartFocus && (
                 <DropdownMenuItem onClick={onStartFocus}>
                   <Play className="h-4 w-4 mr-2" /> Start Focus Timer
                 </DropdownMenuItem>
