@@ -1,0 +1,552 @@
+Build a polished MVP web app called Focus Stack.
+
+This is a compact-first, local-first desktop productivity app for daily prioritization. It should feel like a small, focused utility app, not a sprawling enterprise dashboard. Think closer to the footprint and behavioral feel of a Pomodoro timer app, but with richer daily planning functionality. Full-screen should be supported, but the product must be designed for a compact default window first.
+
+Important product context:
+- Personal app only, not team-based
+- No account, no login, no signup
+- Open source friendly
+- No exporting in MVP
+- No backend required for MVP
+- All data should live locally in the app
+- Optional calendar import can exist later, but do not depend on it
+- The core job is helping a user decide what matters today in under 5 minutes
+- The app should support zero-priority days
+- The app should support subtle carryover of incomplete priorities
+- The app should include a Focus Timer, Trends view, Settings, and brief end-of-day check-in
+
+Primary user:
+Students first, especially busy graduate students, but also useful for employees, consultants, operators, and founders managing competing priorities.
+
+Build target:
+Create a working frontend MVP with realistic local state, seeded demo data, reusable components, responsive compact-first layouts, and polished UI. Do not make this a bare wireframe. Make it feel like a believable real app.
+
+Tech and architecture requirements:
+- Use React + TypeScript
+- Use Tailwind CSS
+- Use a simple local state approach suitable for MVP
+- Use IndexedDB or a clearly structured local persistence layer if straightforward, otherwise use a clean local mock store abstraction that can later be swapped to IndexedDB
+- No fake backend API dependency
+- Build as if this can later become a PWA
+- Code should be clean, modular, and easy to extend
+- Organize by features/screens/components, not one giant file
+
+Design direction:
+The UI should feel premium, quiet, modern, and compact. Do not use loud startup gradients, neon effects, purple AI aesthetics, or sci-fi UI. Use a soft sage-gray and off-white palette with charcoal actions. The app should visually reflect calm prioritization and deliberate focus.
+
+Use this palette:
+- Page background: #F7F8F6
+- Tinted panel background: #F1F4EF
+- Card/input background: #FFFFFF
+- Soft border: #E5E5E5
+- Stronger border: #DADADA
+- Primary text: #222527
+- Secondary text: #6B6F6D
+- Soft accent: #DDE3D6
+- Deeper sage accent: #909D92
+- Primary action fill: #222527
+- Primary action text: #FFFFFF
+
+Typography:
+- Use Inter, Geist, or Plus Jakarta Sans
+- No oversized marketing typography
+- Web app typography should stay compact
+- Largest heading in the app should feel like a page title, not a landing page hero
+- Use clear hierarchy and strong legibility
+
+Core visual style:
+- Compact-first desktop utility
+- Soft rounded panels
+- Very subtle borders
+- Minimal shadows
+- Strong spacing discipline
+- Calm analytics-card feel on Trends
+- White cards on a soft off-white background
+- Tinted sage panels for key sections
+- Dark pill buttons or CTA buttons
+- Charts should use muted tonal colors, not bright traffic-light colors
+
+Critical size and layout requirements:
+This app must be designed first for a compact desktop app window, roughly:
+- Width: 720 to 820 px
+- Height: 820 to 900 px
+
+This is the primary design target.
+
+Layout behavior:
+- Under 900 px width, use compact mode as the primary layout
+- Compact mode should use a single-column stacked layout
+- Do not rely on a permanent right rail
+- In expanded mode above 900 px, allow a secondary summary column or more spacious arrangements
+- Full screen is allowed, but should feel like an expanded version of the compact app, not a different product
+- Priority detail opens as a modal under 900 px and may open as a side drawer above 900 px
+
+Navigation:
+Use top navigation only.
+Top nav items:
+- Home
+- Focus Timer
+- Trends
+- Settings
+
+Do not use a left enterprise sidebar.
+
+Core product model:
+The app uses an adapted Eisenhower Matrix behind the scenes, but the user-facing language should remain simple.
+
+User-facing priority buckets:
+- Must do
+- Should do
+- Could do
+
+Recommendation labels:
+- Do now
+- Schedule
+- Reconsider
+- Deprioritize
+
+Recommendation factors:
+- Importance
+- Urgency
+- Due date proximity
+- Carryover
+- Estimated effort
+- User weighting of importance vs urgency
+
+Recommendation reasons should be human-readable, examples:
+- Important + due soon
+- Carried over from yesterday
+- High importance + low estimated time
+- Scheduled commitment + limited time window
+
+Primary app screens to build:
+1. Welcome
+2. First-run setup
+3. Home empty state
+4. Home planning state
+5. Priority detail modal/drawer
+6. Focus Timer
+7. Trends
+8. Settings
+9. End-of-day check-in modal
+10. Clear local data confirm modal
+
+Detailed screen requirements:
+
+1. Welcome screen
+- Soft background
+- Centered rounded panel
+- App name: Focus Stack
+- Headline: Set better priorities, faster.
+- One concise supporting sentence
+- Primary CTA: Start
+- Optional small text link: Customize settings first
+- Small note: Local-first, no account required
+
+2. First-run setup
+Keep it minimal.
+Fields:
+- Week starts on dropdown
+- Daily check-in time, default 4:45 PM local
+- Default focus session length with options 25, 45, 60, custom
+- Calendar import toggle, off by default
+- Carryover toggle, on by default
+Buttons:
+- Continue to Focus Stack
+- Skip for now
+
+3. Home, empty state
+Compact-first single-column layout with:
+- Top nav
+- Main hero planner card
+- Empty state panel
+- Today summary card
+- Mini Focus Timer launcher
+
+Hero planner card:
+- Title: Set Today’s Priorities
+- One-line helper text
+- Large natural-language quick add input
+- Placeholder example: Finish strategy assignment tonight, 1 hour, due Friday
+- Primary button: Generate priorities
+- Text link: Keep today open
+
+Empty state panel:
+- Message: No priorities selected yet.
+- Supporting copy
+- Optional suggestion chips:
+  - Add your first priority
+  - Paste your schedule
+  - Keep today open
+
+Today summary card:
+- Selected priorities
+- Carryover
+- Check-in at 4:45 PM
+
+4. Home, planning state
+Compact mode should stack sections in this order:
+- Hero planner card, compact version
+- Needs attention section, only if carryover exists
+- From your calendar section, only if enabled
+- Today’s Priorities, always expanded
+- Other Candidates, collapsed by default
+- Completed Today, collapsed by default
+- Today summary card
+- Focus Timer launcher
+
+Needs attention items:
+- Show carryover priorities
+- Inline actions: Keep, Dismiss, Edit
+
+Calendar draft items:
+- Show imported events as draft priority cards
+- Inline actions: Promote, Ignore
+
+Today’s Priorities:
+- Show section title and count
+- Include small helper text: Recommended: 3 to 5
+- Cards must be reorderable
+- Compact layout must comfortably show several cards without feeling cramped
+
+Other Candidates:
+- Collapsed by default
+- Expand to show non-priority items
+
+Completed Today:
+- Collapsed by default
+- Show completed cards in compact style
+
+5. Priority Card component
+Collapsed card should show:
+- Title
+- Optional due date
+- Bucket badge
+- Recommendation chip
+- Estimated time
+- Short recommendation reason
+- Status control
+- Optional progress display
+
+Status options:
+- Not started
+- In progress
+- Completed
+- Deferred
+- Dropped
+
+Progress options:
+- 25%
+- 50%
+- 75%
+- 100%
+
+Interactions:
+- Clicking opens detail view
+- Reorder handle visible in Today’s Priorities
+- Quick actions for complete, defer, start focus
+- Cards must be visually compact and readable
+
+6. Priority detail view
+Responsive behavior:
+- Under 900 px, open as centered modal sheet
+- Above 900 px, may open as right-side drawer
+
+Fields:
+- Title
+- Bucket
+- Recommendation label
+- Recommendation reason
+- Due date
+- Estimated time
+- Status
+- Progress
+- Importance
+- Urgency
+- Optional category
+- Recurrence
+- Assigned focus time
+- Notes
+- Carryover history
+
+Footer actions:
+- Save
+- Delete
+- Mark completed
+
+7. Focus Timer
+Compact-first and visually minimal.
+Include:
+- Large timer display
+- Duration presets
+- Start, pause, reset
+- Optional linked priority display
+- If none linked, say: Not linked to a priority
+- Optional small list of today’s sessions if easy to support
+
+Behavior:
+- Can start independently anytime
+- If launched from a priority with focus time, prefill it
+- Keep this screen clean and focused
+
+8. Trends
+Compact mode first.
+Layout in compact mode:
+- Header with week selector
+- KPI grid, 2 columns by 3 rows
+- One large chart card
+- Miss reasons card
+- Carryover card
+- Short rules-based summary card
+
+KPIs:
+- Completion rate
+- Carryover count
+- Current streak
+- Planned vs completed
+- Top miss reason
+- Days within 3 to 5 priorities
+
+Chart:
+- One weekly bar chart only
+- Planned vs completed by day
+- Use muted tonal colors from the palette
+- Avoid loud green-yellow-red
+- Labels must remain readable at compact widths
+
+Summary card:
+- One concise descriptive paragraph
+- Not preachy
+- Not AI chat style
+- Example tone: You completed at least 75% of your priorities on 4 of 7 days, but carryover increased on days with more than 5 selected items.
+
+9. Settings
+Single stacked settings page, not a tab-heavy settings console.
+Groups:
+- Planning
+- Focus
+- Recommendation logic
+- Calendar
+- Data and privacy
+
+Planning settings:
+- Week start day
+- Reminder time
+- Carryover on/off
+- Recurring item daily prompt
+
+Focus settings:
+- Default focus minutes
+- Auto-start only for timed priorities toggle
+
+Recommendation settings:
+- Importance weight slider
+- Urgency weight slider
+- Explain recommendation reasons toggle
+
+Calendar settings:
+- Enable import
+- Provider placeholder
+- Privacy note
+
+Data and privacy:
+- Label clearly that data is stored locally on this device
+- Clear completed history
+- Clear all app data
+- Reset Focus Stack
+
+10. End-of-day check-in modal
+Compact-friendly overlay modal with fixed header and footer.
+Title:
+- Wrap up today
+
+Subtext:
+- Update what happened before tomorrow starts.
+
+For each selected priority show:
+- Title
+- Final status dropdown
+- Progress selector if needed
+- Miss reason dropdown only if incomplete
+
+Miss reasons:
+- Underestimated time
+- Interrupted by other work
+- Low energy or focus
+- Priority changed
+- Task was unclear
+- Avoided it
+- Other
+
+Footer buttons:
+- Save check-in
+- Remind me next time
+
+Behavior:
+- Trigger logic should be represented in local state and UI
+- If skipped, surface again on next app open before new planning begins
+
+11. Clear data confirm modal
+- Title: Clear local data?
+- Body: This removes stored priorities, trends, and settings from this device.
+- Buttons: Clear data, Cancel
+
+Core behavior and local logic:
+- Users create priorities using natural-language quick add
+- Only title is required initially
+- System parses text into a draft priority card
+- System suggests bucket and recommendation label before save
+- Users can override all recommendations
+- Incomplete priorities carry over by default
+- Deferred priorities carry to tomorrow by default
+- Completed one-off priorities with no due date should not repopulate
+- Recurring priorities should prompt the user each day whether to include them
+- Calendar events should become draft priority cards, not active priorities
+- Zero-priority days are allowed
+- Completed priorities move into Completed Today
+- Other candidate items remain in a collapsed section
+
+Local data model to structure in code:
+1. priority_card
+- id
+- title
+- notes
+- bucket
+- recommendation_label
+- recommendation_reason
+- due_date
+- estimated_minutes
+- status
+- progress_percent
+- importance_score
+- urgency_score
+- category
+- recurrence_type
+- recurrence_config
+- source_type
+- assigned_focus_time
+- created_at
+- updated_at
+- archived_at
+
+2. day_plan
+- id
+- date
+- week_start_day
+- planning_started_at
+- planning_completed_at
+- selected_priority_ids
+- candidate_priority_ids
+- completed_priority_ids
+- check_in_completed
+- check_in_completed_at
+- zero_priority_day
+
+3. check_in_entry
+- id
+- day_plan_id
+- priority_card_id
+- final_status
+- final_progress_percent
+- miss_reason
+
+4. weekly_summary
+- id
+- week_start_date
+- completion_rate
+- carryover_count
+- streak_days
+- planned_count
+- completed_count
+- top_miss_reason
+- within_3_5_days_count
+- summary_text
+
+5. settings
+- id
+- week_start_day
+- reminder_time_local
+- importance_weight
+- urgency_weight
+- default_focus_minutes
+- calendar_import_enabled
+- carryover_enabled
+- recurring_prompt_enabled
+- default_time_options
+- theme_mode
+- retention_mode
+- rolling_window_weeks
+- locale
+
+6. focus_session
+- id
+- started_at
+- ended_at
+- planned_minutes
+- linked_priority_id
+- manual_start
+
+Seed the app with realistic demo data so all screens feel believable:
+- A few selected priorities
+- A couple candidate items
+- One or two completed items
+- Carryover example
+- Weekly summary data for the Trends view
+- Settings values that reflect the compact local-first product
+
+Design system requirements:
+- Create a theme or token file for colors, spacing, radius, typography
+- Use soft rounded cards and panels
+- Keep shadows subtle
+- Use borders more than shadows
+- No generic template look
+- No AI-slop visual patterns
+- No purple gradient SaaS aesthetic
+- No overly large hero type
+- No left nav enterprise dashboard
+
+Component structure requirements:
+Build reusable components for at least:
+- App shell
+- Top navigation
+- Section card
+- Priority card
+- Priority detail modal/drawer
+- Quick add input
+- Recommendation chip
+- Bucket badge
+- Progress control
+- Status select
+- Collapsible section
+- KPI widget
+- Weekly bar chart
+- Focus timer widget
+- Check-in modal
+- Confirm modal
+- Empty state
+
+UX quality requirements:
+- Include empty states
+- Include populated states
+- Include hover and active states
+- Keep transitions subtle
+- Use accessible semantics and keyboard-friendly controls
+- Make the UI feel production-like
+- Compact mode must feel intentional, not squeezed
+- The app should feel calm, premium, and precise
+
+Implementation output:
+Please generate:
+1. The full React app code
+2. Reusable components
+3. Local demo data
+4. Local state structure
+5. Design tokens/theme setup
+6. A concise README section inside the project explaining architecture and screen structure
+
+Also include a short explanation of:
+- How compact mode behaves
+- How local persistence is structured
+- Which files represent the main features
+
+Do not give me only planning text. Generate the actual app.

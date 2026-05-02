@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Focus Stack"
+version = "1.0.0"
+id = "artifacts/focus-stack"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25662
+
+[services.development]
+run = "pnpm --filter @workspace/focus-stack run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/focus-stack", "run", "build" ]
+publicDir = "artifacts/focus-stack/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25662"
+BASE_PATH = "/"
