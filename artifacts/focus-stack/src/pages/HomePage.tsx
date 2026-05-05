@@ -270,7 +270,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl p-5 mx-4" style={GLASS_SUBTLE}>
+          <div className="rounded-2xl p-5 mr-8" style={GLASS_SUBTLE}>
             <p className="text-sm font-medium text-[#222527]/60 mb-1">No priorities selected yet.</p>
             <p className="text-xs text-[#222527]/40">Add one above or keep today open for focused work.</p>
             <div className="flex gap-2 flex-wrap mt-4">
@@ -291,7 +291,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl p-4 mx-36" style={GLASS_SUBTLE}>
+          <div className="rounded-2xl p-4 mr-72" style={GLASS_SUBTLE}>
             <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 mb-3">Today</p>
             <div className="flex items-end justify-between gap-4">
               <div className="flex gap-6 text-sm text-[#222527]/60">
