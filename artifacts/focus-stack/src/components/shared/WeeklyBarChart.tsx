@@ -143,7 +143,7 @@ export function WeeklyBarChart({ data }: WeeklyBarChartProps) {
       </ResponsiveContainer>
 
       {/* Legend — centred below chart */}
-      <div className="flex items-center justify-center gap-5 mt-2">
+      <div className="flex items-center justify-center gap-5 mt-2 mb-2">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: 'rgba(34,37,39,0.75)' }} />
           <span className="text-[11px] text-[#222527]/50" style={{ fontFamily: "'DM Sans', sans-serif" }}>Completed</span>
