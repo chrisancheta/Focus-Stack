@@ -119,7 +119,27 @@ export function FocusTimerWidget() {
                 <stop offset="65%"  stopColor="#E8EDE6" stopOpacity="1" />
                 <stop offset="100%" stopColor="#D8DFD5" stopOpacity="1" />
               </radialGradient>
+              <style>{`
+                @keyframes clockPulse {
+                  0%   { transform: scale(1);    opacity: 0.50; }
+                  100% { transform: scale(1.12); opacity: 0;    }
+                }
+                .clock-pulse-ring {
+                  transform-box: fill-box;
+                  transform-origin: center;
+                  animation: clockPulse 2s ease-out infinite;
+                }
+              `}</style>
             </defs>
+
+            {isRunning && (
+              <circle
+                cx={CENTER} cy={CENTER} r={BG_R}
+                fill="rgba(144,157,146,0.28)"
+                stroke="none"
+                className="clock-pulse-ring"
+              />
+            )}
 
             <circle cx={CENTER} cy={CENTER} r={BG_R} fill="url(#clockBg)" />
             <circle cx={CENTER} cy={CENTER} r={BG_R}
