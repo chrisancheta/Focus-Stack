@@ -20,7 +20,7 @@ export default function WelcomePage() {
           className="mx-auto mb-7 h-14 w-auto object-contain"
         />
         <p className="text-sm text-[#222527]/55 leading-relaxed mb-9">
-          Set better priorities, faster. A quiet daily ritual for deciding what actually matters today.
+          Optimize your priorities.
         </p>
 
         <div className="flex flex-col gap-3">
@@ -37,7 +37,7 @@ export default function WelcomePage() {
             className="block w-full py-2.5 rounded-full text-sm font-medium text-[#222527]/60 text-center hover:text-[#222527] transition-colors"
             data-testid="button-customize"
           >
-            Customize settings first
+            Settings
           </Link>
         </div>
 
