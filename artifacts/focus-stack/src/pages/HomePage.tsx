@@ -254,7 +254,7 @@ export default function HomePage() {
         <div className="flex flex-col gap-4">
           <div className="rounded-3xl p-6" style={GLASS}>
             <h2 className="text-lg font-semibold text-[#222527] tracking-tight mb-1">Set Today's Priorities</h2>
-            <p className="text-sm text-[#222527]/50 mb-5">What needs your attention most today?</p>
+            <p className="text-sm text-[#222527]/50 mb-5">Type naturally — include a deadline, time estimate, or context.</p>
             <QuickAddInput
               onAdd={handleQuickAdd}
               placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
