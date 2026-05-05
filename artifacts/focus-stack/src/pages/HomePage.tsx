@@ -298,7 +298,7 @@ export default function HomePage() {
                 <div><span className="text-xl font-light text-[#222527]">0</span><br /><span className="text-xs">selected</span></div>
                 <div><span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span><br /><span className="text-xs">carryover</span></div>
                 <div>
-                  <span className="text-sm font-medium text-[#222527]/70">
+                  <span className="text-xl font-light text-[#222527]">
                     {state.settings?.reminderTimeLocal
                       ? (() => {
                           const [h, m] = state.settings.reminderTimeLocal.split(':').map(Number);
@@ -439,7 +439,7 @@ export default function HomePage() {
                   <br /><span className="text-xs text-[#222527]/50">carryover</span>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-[#222527]/70">
+                  <span className="text-xl font-light text-[#222527]">
                     {state.settings?.reminderTimeLocal
                       ? (() => {
                           const [h, m] = state.settings.reminderTimeLocal.split(':').map(Number);
