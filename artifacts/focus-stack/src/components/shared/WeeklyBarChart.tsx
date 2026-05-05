@@ -94,7 +94,8 @@ export function WeeklyBarChart({ data }: WeeklyBarChartProps) {
   const stackData = buildStackData(data);
 
   return (
-    <div className="h-[220px] w-full">
+    <div className="w-full">
+      <div className="h-[220px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={stackData}
@@ -141,9 +142,10 @@ export function WeeklyBarChart({ data }: WeeklyBarChartProps) {
           />
         </BarChart>
       </ResponsiveContainer>
+      </div>
 
       {/* Legend — centred below chart */}
-      <div className="flex items-center justify-center gap-5 mt-2 mb-2">
+      <div className="flex items-center justify-center gap-5 mt-3 mb-4">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: 'rgba(34,37,39,0.75)' }} />
           <span className="text-[11px] text-[#222527]/50" style={{ fontFamily: "'DM Sans', sans-serif" }}>Completed</span>
