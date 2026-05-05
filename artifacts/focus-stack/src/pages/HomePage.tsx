@@ -10,6 +10,19 @@ import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import { generateId, getTodayISODate } from '@/lib/utils';
 import { DayPlan } from '@/lib/store';
 
+const PLACEHOLDER_EXAMPLES = [
+  'Build-a-thon submission by 3am PDT',
+  'Work on MBA presentation today',
+  'Design hero card for website',
+  'Finalize contract draft by end of day',
+  'Review team PR before standup, 30 min',
+  'Submit quarterly report before 5pm',
+  'Call client back today, 15 min',
+  'Research new PM tools this week',
+  'Prep slides for Thursday board meeting',
+  'Fix critical login bug before release',
+];
+
 const GLASS = {
   background: 'rgba(255,255,255,0.45)',
   backdropFilter: 'blur(20px)',
@@ -44,6 +57,14 @@ export default function HomePage() {
   const [, setLocation] = useLocation();
   const [selectedPriorityId, setSelectedPriorityId] = useState<string | null>(null);
   const [showCheckIn, setShowCheckIn] = useState(false);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPlaceholderIdx(i => (i + 1) % PLACEHOLDER_EXAMPLES.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
 
   const today = getTodayISODate();
   const todayPlan = state.dayPlans.find(dp => dp.date === today);
@@ -236,7 +257,7 @@ export default function HomePage() {
             <p className="text-sm text-[#222527]/50 mb-5">What needs your attention most today?</p>
             <QuickAddInput
               onAdd={handleQuickAdd}
-              placeholder="Finish strategy assignment tonight, 1 hour, due Friday"
+              placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
               className="text-sm"
             />
             <div className="flex items-center gap-3 mt-4">
