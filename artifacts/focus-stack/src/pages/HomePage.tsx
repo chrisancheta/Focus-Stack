@@ -291,7 +291,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl p-4 mx-16" style={GLASS_SUBTLE}>
+          <div className="rounded-2xl p-4 mx-36" style={GLASS_SUBTLE}>
             <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 mb-3">Today</p>
             <div className="flex items-end justify-between gap-4">
               <div className="flex gap-6 text-sm text-[#222527]/60">
