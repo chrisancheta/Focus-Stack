@@ -56,7 +56,7 @@ export default function SetupPage() {
         }}
       >
         <h1 className="text-xl font-semibold text-[#222527] tracking-tight mb-1">Quick Setup</h1>
-        <p className="text-sm text-[#222527]/50 mb-7">You can change any of these later in Settings.</p>
+        <p className="text-sm text-[#222527]/50 mb-7">You can change this later.</p>
 
         <div className="space-y-5">
           <div className="space-y-1.5">
@@ -75,7 +75,7 @@ export default function SetupPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#222527]/60 uppercase tracking-wider">Daily check-in time</label>
+            <label className="text-xs font-semibold text-[#222527]/60 uppercase tracking-wider">EOD Check-in Time</label>
             <div style={GLASS_INPUT} className="rounded-xl overflow-hidden">
               <Select value={reminder} onValueChange={setReminder}>
                 <SelectTrigger className="border-0 bg-transparent shadow-none h-11 text-[#222527] font-medium">
