@@ -19,7 +19,7 @@ export default function WelcomePage() {
           alt="Focus Stack"
           className="mx-auto mb-7 h-14 w-auto object-contain"
         />
-        <p className="text-sm text-[#222527]/55 leading-relaxed mb-9">
+        <p className="text-xl text-[#222527]/55 leading-relaxed mb-9">
           Optimize your priorities.
         </p>
 
