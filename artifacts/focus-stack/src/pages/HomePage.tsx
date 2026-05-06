@@ -320,14 +320,23 @@ export default function HomePage() {
           <div className="rounded-3xl p-6" style={GLASS}>
             <div className="flex items-start justify-between mb-1">
               <h2 className="text-lg font-semibold text-[#222527] tracking-tight">Set Today's Priorities</h2>
-              <button
-                onClick={() => setShowSuggestModal(true)}
-                className="flex items-center gap-1.5 text-xs font-medium text-[#222527]/60 hover:text-[#222527] transition-colors shrink-0 ml-3 mt-0.5 px-3 py-1.5 rounded-full"
-                style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.70)' }}
-              >
-                <Sparkles className="h-3 w-3" />
-                Suggest My Day
-              </button>
+              <div className="flex items-center gap-2 shrink-0 ml-3 mt-0.5">
+                <button
+                  onClick={handleKeepOpen}
+                  className="flex items-center text-xs font-medium text-[#222527]/60 hover:text-[#222527] transition-colors px-3 py-1.5 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.70)' }}
+                >
+                  Keep today open
+                </button>
+                <button
+                  onClick={() => setShowSuggestModal(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-[#222527]/60 hover:text-[#222527] transition-colors px-3 py-1.5 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.70)' }}
+                >
+                  <Sparkles className="h-3 w-3" />
+                  Suggest My Day
+                </button>
+              </div>
             </div>
             <p className="text-sm text-[#222527]/50 mb-5">Type naturally — include a deadline, time estimate, or context.</p>
             <QuickAddInput
@@ -336,14 +345,6 @@ export default function HomePage() {
               className="text-sm"
             />
             <p className="text-xs text-[#222527]/35 mt-2">Write freely. We'll prioritize it for you.</p>
-            <div className="flex items-center gap-3 mt-3">
-              <button
-                onClick={handleKeepOpen}
-                className="text-xs text-[#222527]/45 hover:text-[#222527]/70 transition-colors underline-offset-2 hover:underline"
-              >
-                Keep today open
-              </button>
-            </div>
           </div>
 
           <div className="rounded-2xl p-5 mr-8" style={GLASS_SUBTLE}>
