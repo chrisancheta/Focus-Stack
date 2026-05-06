@@ -593,25 +593,14 @@ export default function HomePage() {
                 </h3>
               </div>
               {carryoverPriorities.map(p => (
-                <div key={p.id} className="relative">
-                  <PriorityCard
-                    priority={p}
-                    onClick={() => setSelectedPriorityId(p.id)}
-                    onComplete={() => handleComplete(p.id)}
-                  />
-                  <div
-                    className="absolute bottom-3 right-3 flex gap-1.5"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={() => dismissCarryover(p.id)}
-                      className="text-[10px] px-2.5 py-1 rounded-full font-medium text-[#222527]/50 hover:text-[#222527]/80 transition-colors"
-                      style={{ background: 'rgba(255,255,255,0.50)', border: '1px solid rgba(255,255,255,0.60)' }}
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </div>
+                <PriorityCard
+                  key={p.id}
+                  priority={p}
+                  onClick={() => setSelectedPriorityId(p.id)}
+                  onComplete={() => handleComplete(p.id)}
+                  onStartFocus={() => handleStartFocus(p.id)}
+                  onDismiss={() => dismissCarryover(p.id)}
+                />
               ))}
             </div>
           )}
@@ -630,19 +619,24 @@ export default function HomePage() {
               <span className="text-[11px] text-[#222527]/45">Recommended: 3–5</span>
             </div>
             <div className="space-y-2">
-              {selectedPriorities.map(p => (
-                <PriorityCard
-                  key={p.id}
-                  priority={p}
-                  onClick={() => setSelectedPriorityId(p.id)}
-                  onComplete={() => handleComplete(p.id)}
-                  onMoveUp={() => handleMoveUp(p.id)}
-                  onMoveDown={() => handleMoveDown(p.id)}
-                  onStartFocus={() => handleStartFocus(p.id)}
-                  onNoteChange={note => updatePriority(p.id, { notes: note })}
-                  showMoveControls
-                />
-              ))}
+              {(() => {
+                const activeForRank = selectedPriorities.filter(p => p.status !== 'completed');
+                const rankMap = new Map(activeForRank.slice(0, 3).map((p, i) => [p.id, i + 1]));
+                return selectedPriorities.map(p => (
+                  <PriorityCard
+                    key={p.id}
+                    priority={p}
+                    rank={rankMap.get(p.id)}
+                    onClick={() => setSelectedPriorityId(p.id)}
+                    onComplete={() => handleComplete(p.id)}
+                    onMoveUp={() => handleMoveUp(p.id)}
+                    onMoveDown={() => handleMoveDown(p.id)}
+                    onStartFocus={() => handleStartFocus(p.id)}
+                    onNoteChange={note => updatePriority(p.id, { notes: note })}
+                    showMoveControls
+                  />
+                ));
+              })()}
             </div>
           </div>
 
