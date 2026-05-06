@@ -274,16 +274,16 @@ export default function HomePage() {
   };
 
   const handleCheckInSave = (
-    updates: { id: string; action: 'done' | 'carryover' | 'drop' | null }[],
+    updates: { id: string; action: 'done' | 'carryover' | 'drop' | null; scheduledDay?: string; scheduledTimeBlock?: string }[],
     reflection?: { choice: string; notes: string },
   ) => {
     const newCompletedIds: string[] = [];
-    updates.forEach(({ id, action }) => {
+    updates.forEach(({ id, action, scheduledDay }) => {
       if (action === 'done') {
         updatePriority(id, { status: 'completed', progressPercent: 100, isCarryover: false });
         newCompletedIds.push(id);
       } else if (action === 'carryover') {
-        updatePriority(id, { isCarryover: true });
+        updatePriority(id, { isCarryover: true, ...(scheduledDay ? { dueDate: scheduledDay } : {}) });
       } else if (action === 'drop') {
         updatePriority(id, { status: 'dropped', isCarryover: false });
       }
