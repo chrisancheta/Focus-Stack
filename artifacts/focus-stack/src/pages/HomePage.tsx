@@ -758,7 +758,7 @@ export default function HomePage() {
                       : 'none',
                   }}
                 >
-                  {todayPlan.checkInCompleted ? '✓ Checked in' : 'Check In'}
+                  {todayPlan.checkInCompleted ? '✓ Checked in' : 'EOD Check In'}
                 </button>
               )}
             </div>
