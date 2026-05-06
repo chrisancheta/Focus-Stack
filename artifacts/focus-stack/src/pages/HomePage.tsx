@@ -342,8 +342,22 @@ export default function HomePage() {
               onAdd={handleQuickAdd}
               placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
               className="text-sm"
+              formId="quick-add-main"
+              hideButton
             />
-            <p className="text-xs text-[#222527]/35 mt-2">Write freely. We'll prioritize it for you.</p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-[#222527]/35">Write freely. We'll prioritize it for you.</p>
+              <button
+                type="submit"
+                form="quick-add-main"
+                className="h-7 w-7 rounded-full flex items-center justify-center transition-colors shrink-0"
+                style={{ background: 'rgba(34,37,39,0.82)', color: '#fff' }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div className="rounded-2xl p-5" style={GLASS_SUBTLE}>
