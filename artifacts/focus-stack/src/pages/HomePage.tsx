@@ -11,6 +11,8 @@ import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
 import { SuggestMyDayModal } from '@/components/shared/SuggestMyDayModal';
 import { generateId, getTodayISODate } from '@/lib/utils';
 import { DayPlan } from '@/lib/store';
+import { findSimilar } from '@/lib/similarity';
+import type { SimilarMatch } from '@/lib/similarity';
 
 const PLACEHOLDER_EXAMPLES = [
   "What's on your mind today?",
@@ -59,6 +61,7 @@ export default function HomePage() {
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [autoStartPomodoro, setAutoStartPomodoro] = useState(true);
+  const [pendingAdd, setPendingAdd] = useState<{ title: string; match: SimilarMatch } | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -114,7 +117,7 @@ export default function HomePage() {
   const otherFocusPriorities = activePriorities.filter(p => p.bucket !== 'must-do');
   const topPriority = mustDoPriorities[0] ?? activePriorities[0] ?? null;
 
-  const handleQuickAdd = (title: string) => {
+  const doAdd = (title: string) => {
     const newPriority = {
       id: generateId(),
       title,
@@ -150,6 +153,27 @@ export default function HomePage() {
       };
       addDayPlan(newPlan);
     }
+  };
+
+  const handleQuickAdd = (title: string) => {
+    const match = findSimilar(
+      title,
+      priorities.filter(p => p.status !== 'completed' && p.status !== 'dropped'),
+    );
+    if (match) {
+      setPendingAdd({ title, match });
+    } else {
+      doAdd(title);
+    }
+  };
+
+  const handleDedupCombine = () => {
+    setPendingAdd(null);
+  };
+
+  const handleDedupKeepBoth = () => {
+    if (pendingAdd) doAdd(pendingAdd.title);
+    setPendingAdd(null);
   };
 
   const handleSuggestMyDay = ({ must, stress, nagging }: { must: string; stress: string; nagging: string }) => {
@@ -409,6 +433,50 @@ export default function HomePage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {pendingAdd && (
+        <div
+          className="rounded-2xl px-4 py-3.5 flex flex-col gap-2.5"
+          style={{
+            background: 'rgba(255,248,225,0.72)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(245,200,80,0.38)',
+            boxShadow: '0 2px 12px rgba(200,160,0,0.10)',
+          }}
+        >
+          <div className="flex items-start gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mt-0.5 shrink-0 text-amber-500/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-amber-800/80 mb-0.5">Looks similar to an existing task</p>
+              <p className="text-xs text-amber-700/70 truncate">
+                Existing: <span className="font-medium">"{pendingAdd.match.title}"</span>
+              </p>
+              <p className="text-xs text-amber-700/50 mt-0.5">
+                New: <span className="font-medium">"{pendingAdd.title}"</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDedupCombine}
+              className="flex-1 h-8 rounded-xl text-xs font-semibold transition-all hover:opacity-80"
+              style={{ background: 'rgba(200,155,0,0.15)', color: '#92700a', border: '1px solid rgba(200,155,0,0.28)' }}
+            >
+              Use existing task
+            </button>
+            <button
+              onClick={handleDedupKeepBoth}
+              className="flex-1 h-8 rounded-xl text-xs font-semibold transition-all hover:opacity-80"
+              style={{ background: 'rgba(255,255,255,0.55)', color: 'rgba(34,37,39,0.65)', border: '1px solid rgba(255,255,255,0.70)' }}
+            >
+              Keep both
+            </button>
           </div>
         </div>
       )}
