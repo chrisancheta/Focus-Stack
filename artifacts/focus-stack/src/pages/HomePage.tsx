@@ -362,7 +362,6 @@ export default function HomePage() {
 
           <div className="rounded-2xl p-5" style={GLASS_SUBTLE}>
             <p className="text-sm font-medium text-[#222527]/60 mb-1">No priorities selected yet.</p>
-            <p className="text-xs text-[#222527]/40">Add one above or keep today open for focused work.</p>
           </div>
 
           <div className="rounded-2xl p-4 mr-72" style={GLASS_SUBTLE}>
