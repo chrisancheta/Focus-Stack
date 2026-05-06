@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Sparkles } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAppStore } from '@/lib/storeContext';
 import { useTimer } from '@/lib/timerContext';
@@ -7,20 +8,17 @@ import { QuickAddInput } from '@/components/priority/QuickAddInput';
 import { PriorityDetailModal } from '@/components/priority/PriorityDetailModal';
 import { CheckInModal } from '@/components/shared/CheckInModal';
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection';
+import { SuggestMyDayModal } from '@/components/shared/SuggestMyDayModal';
 import { generateId, getTodayISODate } from '@/lib/utils';
 import { DayPlan } from '@/lib/store';
 
 const PLACEHOLDER_EXAMPLES = [
-  'Build-a-thon submission by 3am PDT',
-  'Work on MBA presentation today',
-  'Design hero card for website',
-  'Finalize contract draft by end of day',
-  'Review team PR before standup, 30 min',
-  'Submit quarterly report before 5pm',
-  'Call client back today, 15 min',
-  'Research new PM tools this week',
-  'Prep slides for Thursday board meeting',
-  'Fix critical login bug before release',
+  "What's on your mind today?",
+  'Build-a-thon submission by 12a ET',
+  "What feels urgent but maybe isn't?",
+  'Work on MBA capstone project today',
+  'What would make today successful?',
+  'Research AI-powered PM tools this week',
 ];
 
 const GLASS = {
@@ -58,6 +56,7 @@ export default function HomePage() {
   const [selectedPriorityId, setSelectedPriorityId] = useState<string | null>(null);
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -143,6 +142,72 @@ export default function HomePage() {
         zeroPriorityDay: false,
       };
       addDayPlan(newPlan);
+    }
+  };
+
+  const handleSuggestMyDay = ({ must, stress, nagging }: { must: string; stress: string; nagging: string }) => {
+    const now = new Date().toISOString();
+    const parse = (text: string) =>
+      text.split('\n').map(l => l.trim().replace(/^[-•*]\s*/, '')).filter(s => s.length > 2);
+
+    const newPriorities = [
+      ...parse(must).map(title => ({
+        id: generateId(), title,
+        bucket: 'must-do' as const,
+        recommendationLabel: 'do-now' as const,
+        recommendationReason: 'Must get done today',
+        status: 'not-started' as const,
+        progressPercent: 0 as const,
+        importanceScore: 5 as const,
+        urgencyScore: 5 as const,
+        createdAt: now, updatedAt: now,
+      })),
+      ...parse(stress).map(title => ({
+        id: generateId(), title,
+        bucket: 'must-do' as const,
+        recommendationLabel: 'do-now' as const,
+        recommendationReason: 'Flagged as stressful',
+        status: 'not-started' as const,
+        progressPercent: 0 as const,
+        importanceScore: 4 as const,
+        urgencyScore: 5 as const,
+        createdAt: now, updatedAt: now,
+      })),
+      ...parse(nagging).map(title => ({
+        id: generateId(), title,
+        bucket: 'could-do' as const,
+        recommendationLabel: 'schedule' as const,
+        recommendationReason: 'On your mind but not urgent today',
+        status: 'not-started' as const,
+        progressPercent: 0 as const,
+        importanceScore: 3 as const,
+        urgencyScore: 2 as const,
+        createdAt: now, updatedAt: now,
+      })),
+    ];
+
+    if (newPriorities.length === 0) return;
+    newPriorities.forEach(p => addPriority(p));
+    const newIds = newPriorities.map(p => p.id);
+
+    if (todayPlan) {
+      updateDayPlan(todayPlan.id, {
+        selectedPriorityIds: [...todayPlan.selectedPriorityIds, ...newIds],
+        zeroPriorityDay: false,
+      });
+    } else {
+      const recurringIds = getRecurringIdsForToday(state.priorities, today);
+      const allIds = Array.from(new Set([...recurringIds, ...newIds]));
+      addDayPlan({
+        id: generateId(),
+        date: today,
+        weekStartDay: state.settings?.weekStartDay ?? 1,
+        selectedPriorityIds: allIds,
+        candidatePriorityIds: [],
+        completedPriorityIds: [],
+        checkInCompleted: false,
+        zeroPriorityDay: false,
+      });
     }
   };
 
@@ -253,14 +318,25 @@ export default function HomePage() {
       ) : isEmpty ? (
         <div className="flex flex-col gap-4">
           <div className="rounded-3xl p-6" style={GLASS}>
-            <h2 className="text-lg font-semibold text-[#222527] tracking-tight mb-1">Set Today's Priorities</h2>
+            <div className="flex items-start justify-between mb-1">
+              <h2 className="text-lg font-semibold text-[#222527] tracking-tight">Set Today's Priorities</h2>
+              <button
+                onClick={() => setShowSuggestModal(true)}
+                className="flex items-center gap-1.5 text-xs font-medium text-[#222527]/60 hover:text-[#222527] transition-colors shrink-0 ml-3 mt-0.5 px-3 py-1.5 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.70)' }}
+              >
+                <Sparkles className="h-3 w-3" />
+                Suggest My Day
+              </button>
+            </div>
             <p className="text-sm text-[#222527]/50 mb-5">Type naturally — include a deadline, time estimate, or context.</p>
             <QuickAddInput
               onAdd={handleQuickAdd}
               placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
               className="text-sm"
             />
-            <div className="flex items-center gap-3 mt-4">
+            <p className="text-xs text-[#222527]/35 mt-2">Write freely. We'll prioritize it for you.</p>
+            <div className="flex items-center gap-3 mt-3">
               <button
                 onClick={handleKeepOpen}
                 className="text-xs text-[#222527]/45 hover:text-[#222527]/70 transition-colors underline-offset-2 hover:underline"
@@ -491,6 +567,12 @@ export default function HomePage() {
           ? priorities.filter(p => todayPlan.selectedPriorityIds.includes(p.id))
           : []}
         onSave={handleCheckInSave}
+      />
+
+      <SuggestMyDayModal
+        isOpen={showSuggestModal}
+        onClose={() => setShowSuggestModal(false)}
+        onSubmit={handleSuggestMyDay}
       />
     </div>
   );
