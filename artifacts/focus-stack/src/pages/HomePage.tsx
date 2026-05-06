@@ -24,17 +24,18 @@ const PLACEHOLDER_EXAMPLES = [
 ];
 
 const GLASS = {
-  background: 'rgba(255,255,255,0.45)',
+  background: 'rgba(255,255,255,0.55)',
   backdropFilter: 'blur(20px)',
   WebkitBackdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255,255,255,0.58)',
+  border: '1px solid rgba(255,255,255,0.72)',
+  boxShadow: '0 2px 16px rgba(34,37,39,0.07)',
 };
 
 const GLASS_SUBTLE = {
-  background: 'rgba(255,255,255,0.28)',
+  background: 'rgba(255,255,255,0.38)',
   backdropFilter: 'blur(12px)',
   WebkitBackdropFilter: 'blur(12px)',
-  border: '1px solid rgba(255,255,255,0.38)',
+  border: '1px solid rgba(255,255,255,0.52)',
 };
 
 function getRecurringIdsForToday(priorities: ReturnType<typeof useAppStore>['state']['priorities'], today: string): string[] {
@@ -586,8 +587,8 @@ export default function HomePage() {
           {carryoverPriorities.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-400/70" />
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-[#222527]/50">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500/75" />
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/65">
                   Needs Attention
                 </h3>
               </div>
@@ -618,15 +619,15 @@ export default function HomePage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-[#222527]/50">Today's Priorities</h3>
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/65">Today's Priorities</h3>
                 <span
-                  className="text-xs font-semibold px-2 py-0.5 rounded-full text-[#222527]/70"
-                  style={{ background: 'rgba(255,255,255,0.50)' }}
+                  className="text-[11px] font-bold px-2 py-0.5 rounded-full text-[#222527]/70"
+                  style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.75)' }}
                 >
                   {selectedPriorities.length}
                 </span>
               </div>
-              <span className="text-[11px] text-[#222527]/35">Recommended: 3–5</span>
+              <span className="text-[11px] text-[#222527]/45">Recommended: 3–5</span>
             </div>
             <div className="space-y-2">
               {selectedPriorities.map(p => (
@@ -721,16 +722,16 @@ export default function HomePage() {
           )}
 
           <div className="rounded-2xl p-4" style={GLASS_SUBTLE}>
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 mb-3">Today</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/55 mb-3">Today</p>
             <div className="flex items-end justify-between gap-4">
               <div className="flex gap-6 text-sm">
                 <div>
                   <span className="text-xl font-light text-[#222527]">{selectedPriorities.length}</span>
-                  <br /><span className="text-xs text-[#222527]/50">selected</span>
+                  <br /><span className="text-xs text-[#222527]/60">selected</span>
                 </div>
                 <div>
                   <span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span>
-                  <br /><span className="text-xs text-[#222527]/50">carryover</span>
+                  <br /><span className="text-xs text-[#222527]/60">carryover</span>
                 </div>
                 <div>
                   <span className="text-xl font-light text-[#222527]">
@@ -742,7 +743,7 @@ export default function HomePage() {
                         })()
                       : '4:45 PM'}
                   </span>
-                  <br /><span className="text-xs text-[#222527]/50">check-in</span>
+                  <br /><span className="text-xs text-[#222527]/60">check-in</span>
                 </div>
               </div>
 
@@ -753,13 +754,13 @@ export default function HomePage() {
                   style={{
                     background: todayPlan.checkInCompleted
                       ? 'rgba(107,143,110,0.15)'
-                      : '#222527',
+                      : 'rgba(107,143,110,0.18)',
                     color: todayPlan.checkInCompleted
-                      ? '#6B8F6E'
-                      : 'white',
+                      ? '#5a7d5d'
+                      : '#2a4e2d',
                     border: todayPlan.checkInCompleted
                       ? '1px solid rgba(107,143,110,0.30)'
-                      : 'none',
+                      : '1px solid rgba(107,143,110,0.35)',
                   }}
                 >
                   {todayPlan.checkInCompleted ? '✓ Checked in' : 'EOD Check In'}

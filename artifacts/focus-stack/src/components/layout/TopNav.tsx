@@ -19,10 +19,10 @@ export function TopNav() {
     <nav
       className="sticky top-0 z-50 w-full"
       style={{
-        background: 'rgba(255,255,255,0.22)',
-        backdropFilter: 'blur(18px)',
-        WebkitBackdropFilter: 'blur(18px)',
-        borderBottom: '1px solid rgba(255,255,255,0.35)',
+        background: 'rgba(255,255,255,0.55)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.65)',
       }}
     >
       <div className="max-w-3xl mx-auto flex h-14 items-center justify-between px-4 sm:px-6">
