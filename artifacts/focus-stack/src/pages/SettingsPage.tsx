@@ -5,9 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { useToast } from '@/hooks/use-toast';
-import {
-  ListChecks, Timer, Sliders, CalendarDays, ShieldCheck, ArrowUpDown,
-} from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 
@@ -34,36 +32,43 @@ const GLASS_SUBTLE = {
   border: '1px solid rgba(255,255,255,0.52)',
 };
 
-// ── Helper components ──────────────────────────────────────────────────────────
+// ── Collapsible section ────────────────────────────────────────────────────────
 
-function SectionHeader({
-  icon: Icon,
+function CollapsibleSection({
   title,
-  description,
-  elevated,
+  open,
+  onToggle,
+  cardStyle,
+  children,
 }: {
-  icon: React.ElementType;
   title: string;
-  description?: string;
-  elevated?: boolean;
+  open: boolean;
+  onToggle: () => void;
+  cardStyle?: React.CSSProperties;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 mb-4">
-      <div
-        className="p-2 rounded-xl shrink-0 mt-0.5"
-        style={{ background: elevated ? 'rgba(34,37,39,0.09)' : 'rgba(34,37,39,0.07)' }}
+    <div className="rounded-2xl overflow-hidden" style={cardStyle ?? GLASS}>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-white/20"
       >
-        <Icon className={`h-4 w-4 ${elevated ? 'text-[#222527]/80' : 'text-[#222527]/55'}`} />
-      </div>
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/65 mb-0.5">{title}</p>
-        {description && (
-          <p className="text-xs text-[#222527]/50 leading-relaxed">{description}</p>
-        )}
-      </div>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/65">{title}</p>
+        <ChevronDown
+          className="h-4 w-4 text-[#222527]/35 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+      {open && (
+        <div className="px-5 pb-5">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
+
+// ── Setting row ────────────────────────────────────────────────────────────────
 
 function SettingRow({
   label,
@@ -137,10 +142,7 @@ function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
       : { background: 'rgba(34,37,39,0.10)', color: 'rgba(34,37,39,0.55)' };
 
   return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={GLASS_SUBTLE}
-    >
+    <div className="rounded-2xl overflow-hidden" style={GLASS_SUBTLE}>
       <div
         className="px-4 py-2.5 flex items-center justify-between"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.55)' }}
@@ -156,15 +158,12 @@ function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
           const barPct = (t.score / maxPossible) * 100;
           return (
             <div key={t.id} className="flex items-center gap-3 py-2.5">
-              {/* Rank badge */}
               <span
                 className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-all duration-300"
                 style={rankStyle(i)}
               >
                 {i + 1}
               </span>
-
-              {/* Title + score bar */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-xs font-medium text-[#222527] truncate">{t.title}</span>
@@ -196,7 +195,10 @@ function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
 
       <div className="px-4 py-2" style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }}>
         <p className="text-[10px] text-[#222527]/40 leading-relaxed">
-          Rankings are based on: <span className="font-semibold text-[#222527]/55">score = importance × {Math.round(iw * 100)}% + urgency × {Math.round(uw * 100)}%</span>
+          Rankings are based on:{' '}
+          <span className="font-semibold text-[#222527]/55">
+            score = importance × {Math.round(iw * 100)}% + urgency × {Math.round(uw * 100)}%
+          </span>
         </p>
       </div>
     </div>
@@ -210,6 +212,16 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const [open, setOpen] = useState({
+    planning: true,
+    focus: true,
+    prioritization: true,
+    calendar: true,
+  });
+
+  const toggle = (key: keyof typeof open) =>
+    setOpen(prev => ({ ...prev, [key]: !prev[key] }));
 
   const DEFAULT_SETTINGS = {
     weekStartDay: 1 as const,
@@ -254,8 +266,7 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Planning ─────────────────────────────────────────────────── */}
-      <div className="rounded-2xl p-5" style={GLASS}>
-        <SectionHeader icon={ListChecks} title="Planning" />
+      <CollapsibleSection title="Planning" open={open.planning} onToggle={() => toggle('planning')}>
         <div className="divide-y divide-white/35">
 
           <SettingRow label="Week starts on">
@@ -350,11 +361,10 @@ export default function SettingsPage() {
           </SettingRow>
 
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* ── Focus Timer ──────────────────────────────────────────────── */}
-      <div className="rounded-2xl p-5" style={GLASS}>
-        <SectionHeader icon={Timer} title="Focus Timer" />
+      <CollapsibleSection title="Focus Timer" open={open.focus} onToggle={() => toggle('focus')}>
         <SettingRow label="Default session length" description="How long each focus block runs">
           <Select
             value={s.defaultFocusMinutes.toString()}
@@ -376,16 +386,18 @@ export default function SettingsPage() {
             </SelectContent>
           </Select>
         </SettingRow>
-      </div>
+      </CollapsibleSection>
 
       {/* ── Prioritization Engine ─────────────────────────────────────── */}
-      <div className="rounded-2xl p-5" style={GLASS_ELEVATED}>
-        <SectionHeader
-          icon={Sliders}
-          title="Prioritization Engine"
-          description="When you rate a task's importance and urgency, these weights determine how the two scores are combined into a ranking recommendation. Adjust to favor strategic depth or time-sensitive responsiveness."
-          elevated
-        />
+      <CollapsibleSection
+        title="Prioritization Engine"
+        open={open.prioritization}
+        onToggle={() => toggle('prioritization')}
+        cardStyle={GLASS_ELEVATED}
+      >
+        <p className="text-xs text-[#222527]/50 leading-relaxed mb-5">
+          When you rate a task's importance and urgency, these weights determine how the two scores are combined into a ranking recommendation. Adjust to favor strategic depth or time-sensitive responsiveness.
+        </p>
 
         {/* Weight split bar */}
         <div className="mb-5">
@@ -448,11 +460,10 @@ export default function SettingsPage() {
 
         {/* Live preview */}
         <LiveRankingPreview iw={s.importanceWeight} uw={s.urgencyWeight} />
-      </div>
+      </CollapsibleSection>
 
       {/* ── Calendar ─────────────────────────────────────────────────── */}
-      <div className="rounded-2xl p-5" style={GLASS}>
-        <SectionHeader icon={CalendarDays} title="Calendar" />
+      <CollapsibleSection title="Calendar" open={open.calendar} onToggle={() => toggle('calendar')}>
         <SettingRow
           label="Enable calendar import"
           description="Import events as draft priority cards"
@@ -471,9 +482,9 @@ export default function SettingsPage() {
             Calendar provider connection coming soon. Events are parsed on-device — nothing is sent to external servers.
           </div>
         )}
-      </div>
+      </CollapsibleSection>
 
-      {/* ── Privacy & Data ───────────────────────────────────────────── */}
+      {/* ── Privacy & Data (static, not collapsible) ─────────────────── */}
       <div
         className="rounded-2xl p-5"
         style={{
@@ -483,7 +494,7 @@ export default function SettingsPage() {
           border: '1px solid rgba(34,37,39,0.10)',
         }}
       >
-        <SectionHeader icon={ShieldCheck} title="Privacy & Data" />
+        <p className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/65 mb-4">Privacy & Data</p>
 
         {/* Privacy statement */}
         <div
