@@ -510,14 +510,14 @@ export default function HomePage() {
         <div className="flex flex-col gap-4">
           <div className="rounded-3xl p-6" style={GLASS}>
             <div className="flex items-start justify-between mb-1">
-              <h2 className="text-lg font-semibold text-[#222527] tracking-tight">Set Today's Priorities</h2>
+              <h2 className="text-lg font-semibold text-[#222527] tracking-tight">Add Today's Priorities</h2>
               <div className="flex items-center gap-2 shrink-0 ml-3 mt-0.5">
                 <button
                   onClick={handleKeepOpen}
                   className="flex items-center text-xs font-medium text-[#222527]/60 hover:text-[#222527] transition-colors px-3 py-1.5 rounded-full"
                   style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.70)' }}
                 >
-                  Keep today open
+                  Keep Today Open
                 </button>
                 <button
                   onClick={() => setShowSuggestModal(true)}
