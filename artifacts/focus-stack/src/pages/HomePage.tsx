@@ -363,22 +363,6 @@ export default function HomePage() {
           <div className="rounded-2xl p-5" style={GLASS_SUBTLE}>
             <p className="text-sm font-medium text-[#222527]/60 mb-1">No priorities selected yet.</p>
             <p className="text-xs text-[#222527]/40">Add one above or keep today open for focused work.</p>
-            <div className="flex gap-2 flex-wrap mt-4">
-              <button
-                onClick={() => document.querySelector<HTMLInputElement>('input[placeholder]')?.focus()}
-                className="text-xs px-3 py-1.5 rounded-full font-medium text-[#222527]/60 hover:text-[#222527] transition-all"
-                style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.65)' }}
-              >
-                Add your first priority
-              </button>
-              <button
-                onClick={handleKeepOpen}
-                className="text-xs px-3 py-1.5 rounded-full font-medium text-[#222527]/60 hover:text-[#222527] transition-all"
-                style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.65)' }}
-              >
-                Keep today open
-              </button>
-            </div>
           </div>
 
           <div className="rounded-2xl p-4 mr-72" style={GLASS_SUBTLE}>
