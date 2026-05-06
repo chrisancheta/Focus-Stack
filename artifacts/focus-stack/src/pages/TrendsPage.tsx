@@ -46,12 +46,12 @@ const SEV_STYLES = {
     actionColor: '#2a4e2d',
   },
   info: {
-    bg:          'rgba(70,110,180,0.09)',
-    border:      'rgba(70,110,180,0.22)',
-    indicator:   'rgba(70,110,180,0.70)',
-    iconBg:      'rgba(70,110,180,0.12)',
-    iconColor:   '#2a3e72',
-    actionColor: '#2a3e72',
+    bg:          'rgba(255,255,255,0.44)',
+    border:      'rgba(255,255,255,0.62)',
+    indicator:   'rgba(144,157,146,0.65)',
+    iconBg:      'rgba(144,157,146,0.18)',
+    iconColor:   'rgba(34,37,39,0.60)',
+    actionColor: 'rgba(34,37,39,0.62)',
   },
 };
 
