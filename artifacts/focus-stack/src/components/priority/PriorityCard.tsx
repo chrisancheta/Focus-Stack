@@ -2,8 +2,57 @@ import React, { useState, useRef } from 'react';
 import { PriorityCard as PriorityType } from '@/lib/store';
 import { BucketBadge } from './BucketBadge';
 import { RecommendationChip } from './RecommendationChip';
-import { Clock, Calendar, CheckCircle2, Circle, MoreVertical, Play, ArrowUp, ArrowDown, RefreshCw, StickyNote } from 'lucide-react';
+import { Clock, Calendar, CheckCircle2, Circle, MoreVertical, Play, ArrowUp, ArrowDown, RefreshCw, StickyNote, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// ── Eisenhower helpers ─────────────────────────────────────────────────────────
+
+function getQuadrant(importanceScore: number, urgencyScore: number) {
+  const hi = importanceScore >= 4;
+  const hu = urgencyScore >= 4;
+  if (hi && hu)  return { label: 'Must Do',   row: 0, col: 0 };
+  if (hi && !hu) return { label: 'Schedule',  row: 0, col: 1 };
+  if (!hi && hu) return { label: 'Delegate',  row: 1, col: 0 };
+  return            { label: 'Eliminate', row: 1, col: 1 };
+}
+
+function quadrantStyle(label: string): React.CSSProperties {
+  if (label === 'Must Do')   return { background: 'rgba(34,37,39,0.09)',   color: 'rgba(34,37,39,0.72)' };
+  if (label === 'Schedule')  return { background: 'rgba(107,143,110,0.13)', color: 'rgba(90,125,93,0.90)' };
+  if (label === 'Delegate')  return { background: 'rgba(194,154,60,0.13)',  color: 'rgba(150,110,20,0.85)' };
+  return                            { background: 'rgba(239,68,68,0.09)',   color: 'rgba(180,40,40,0.72)' };
+}
+
+function MiniMatrix({ row, col }: { row: number; col: number }) {
+  const S = 10; const G = 2; const T = 2 * S + G;
+  return (
+    <svg width={T} height={T} viewBox={`0 0 ${T} ${T}`} className="shrink-0">
+      {([0, 1] as const).flatMap(r =>
+        ([0, 1] as const).map(c => (
+          <rect key={`${r}${c}`}
+            x={c * (S + G)} y={r * (S + G)} width={S} height={S} rx={2}
+            fill={r === row && c === col ? 'rgba(34,37,39,0.68)' : 'rgba(34,37,39,0.10)'}
+          />
+        ))
+      )}
+    </svg>
+  );
+}
+
+function ScoreBar({ label, score }: { label: string; score: number }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10px] text-[#222527]/40">{label}</span>
+      <div className="flex gap-0.5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="w-3 h-1.5 rounded-full"
+            style={{ background: i < score ? 'rgba(34,37,39,0.58)' : 'rgba(34,37,39,0.11)' }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +86,12 @@ export function PriorityCard({
   const isCompleted = priority.status === 'completed';
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteValue, setNoteValue] = useState(priority.notes ?? '');
+  const [whyOpen, setWhyOpen] = useState(false);
+
+  const quadrant = getQuadrant(priority.importanceScore, priority.urgencyScore);
+  const isHighImportance = priority.importanceScore >= 4;
+  const isHighUrgency = priority.urgencyScore >= 4;
+  const tooltipText = `Based on your input, this task is ${isHighImportance ? 'high' : 'low'} importance and ${isHighUrgency ? 'high' : 'low'} urgency`;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Keep local value in sync if the priority is updated externally
@@ -222,6 +277,46 @@ export function PriorityCard({
           )}
         </div>
       </div>
+
+      {/* ── Why this priority? ────────────────────────────────────────── */}
+      {!isCompleted && (
+        <div
+          className="mt-3 pt-2.5"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.45)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            onClick={() => setWhyOpen(w => !w)}
+            className="flex items-center gap-1 text-[11px] text-[#222527]/40 hover:text-[#222527]/65 transition-colors"
+          >
+            <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', whyOpen && 'rotate-180')} />
+            Why this priority?
+          </button>
+
+          {whyOpen && (
+            <div className="mt-2.5 flex items-start gap-3">
+              <div title={tooltipText} className="mt-0.5">
+                <MiniMatrix row={quadrant.row} col={quadrant.col} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-4">
+                  <ScoreBar label="Importance" score={priority.importanceScore} />
+                  <ScoreBar label="Urgency" score={priority.urgencyScore} />
+                </div>
+                <span
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-md self-start"
+                  style={quadrantStyle(quadrant.label)}
+                >
+                  {quadrant.label}
+                </span>
+                <p className="text-[10px] text-[#222527]/35 leading-relaxed max-w-[230px]">
+                  {tooltipText}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Inline quick-note ─────────────────────────────────────────── */}
       {noteOpen && onNoteChange && (
