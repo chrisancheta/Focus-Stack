@@ -338,7 +338,6 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
-            <p className="text-sm text-[#222527]/50 mb-5">Type naturally — include a deadline, time estimate, or context.</p>
             <QuickAddInput
               onAdd={handleQuickAdd}
               placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
