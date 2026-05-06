@@ -32,6 +32,8 @@ export interface DayPlan {
   checkInCompleted: boolean;
   checkInCompletedAt?: string;
   zeroPriorityDay: boolean;
+  reflectionChoice?: string;
+  reflectionNotes?: string;
 }
 
 export interface CheckInEntry {

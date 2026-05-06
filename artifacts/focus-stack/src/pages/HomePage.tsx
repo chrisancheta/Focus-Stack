@@ -273,7 +273,10 @@ export default function HomePage() {
     if (todayPlan) updateDayPlan(todayPlan.id, { zeroPriorityDay: false });
   };
 
-  const handleCheckInSave = (updates: { id: string; action: 'done' | 'carryover' | 'drop' | null }[]) => {
+  const handleCheckInSave = (
+    updates: { id: string; action: 'done' | 'carryover' | 'drop' | null }[],
+    reflection?: { choice: string; notes: string },
+  ) => {
     const newCompletedIds: string[] = [];
     updates.forEach(({ id, action }) => {
       if (action === 'done') {
@@ -291,6 +294,7 @@ export default function HomePage() {
         checkInCompleted: true,
         checkInCompletedAt: new Date().toISOString(),
         completedPriorityIds: merged,
+        ...(reflection ? { reflectionChoice: reflection.choice, reflectionNotes: reflection.notes } : {}),
       });
     }
   };
@@ -780,6 +784,7 @@ export default function HomePage() {
         priorities={todayPlan
           ? priorities.filter(p => todayPlan.selectedPriorityIds.includes(p.id))
           : []}
+        dayPlans={state.dayPlans}
         onSave={handleCheckInSave}
       />
 
