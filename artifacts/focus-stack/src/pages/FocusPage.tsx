@@ -238,7 +238,7 @@ export default function FocusPage() {
             <RotateCcw className="h-4 w-4 text-[#222527]/60" />
           </button>
         </div>
-      ) : (
+      ) : (isRunning || isPaused) ? (
         <button
           onClick={toggle}
           className="w-full h-12 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2.5 transition-all hover:opacity-90 active:scale-[0.98]"
@@ -251,13 +251,11 @@ export default function FocusPage() {
         >
           {isRunning ? (
             <><Pause className="h-4 w-4" />Pause Focus</>
-          ) : isPaused ? (
-            <><Play className="h-4 w-4" />Resume Focus</>
           ) : (
-            <><Play className="h-4 w-4" />Start Focus</>
+            <><Play className="h-4 w-4" />Resume Focus</>
           )}
         </button>
-      )}
+      ) : null}
 
       {/* ── Break suggestion ──────────────────────────────────────────────── */}
       {(isShortBreakDue || isLongBreakDue) && (
