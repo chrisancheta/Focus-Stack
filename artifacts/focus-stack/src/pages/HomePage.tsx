@@ -14,6 +14,7 @@ import { generateId, getTodayISODate } from '@/lib/utils';
 import { DayPlan } from '@/lib/store';
 import { findSimilar } from '@/lib/similarity';
 import type { SimilarMatch } from '@/lib/similarity';
+import { scoreTask } from '@/lib/scoring';
 import { useWindowMode } from '@/lib/windowMode';
 
 const PLACEHOLDER_EXAMPLES = [
@@ -151,16 +152,16 @@ export default function HomePage() {
     : '4:45 PM';
 
   const doAdd = (title: string) => {
+    const scored = scoreTask(title, {
+      importanceWeight: state.settings?.importanceWeight ?? 0.6,
+      urgencyWeight:    state.settings?.urgencyWeight    ?? 0.4,
+    });
     const newPriority = {
       id: generateId(),
       title,
-      bucket: 'should-do' as const,
-      recommendationLabel: 'schedule' as const,
-      recommendationReason: 'Added just now',
+      ...scored,
       status: 'not-started' as const,
       progressPercent: 0 as const,
-      importanceScore: 3 as const,
-      urgencyScore: 3 as const,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -208,40 +209,58 @@ export default function HomePage() {
     const parse = (text: string) =>
       text.split('\n').map(l => l.trim().replace(/^[-•*]\s*/, '')).filter(s => s.length > 2);
 
+    const iw = state.settings?.importanceWeight ?? 0.6;
+    const uw = state.settings?.urgencyWeight    ?? 0.4;
+
     const newPriorities = [
-      ...parse(must).map(title => ({
-        id: generateId(), title,
-        bucket: 'must-do' as const,
-        recommendationLabel: 'do-now' as const,
-        recommendationReason: 'Must get done today',
-        status: 'not-started' as const,
-        progressPercent: 0 as const,
-        importanceScore: 5 as const,
-        urgencyScore: 5 as const,
-        createdAt: now, updatedAt: now,
-      })),
-      ...parse(stress).map(title => ({
-        id: generateId(), title,
-        bucket: 'must-do' as const,
-        recommendationLabel: 'do-now' as const,
-        recommendationReason: 'Flagged as stressful',
-        status: 'not-started' as const,
-        progressPercent: 0 as const,
-        importanceScore: 4 as const,
-        urgencyScore: 5 as const,
-        createdAt: now, updatedAt: now,
-      })),
-      ...parse(nagging).map(title => ({
-        id: generateId(), title,
-        bucket: 'could-do' as const,
-        recommendationLabel: 'schedule' as const,
-        recommendationReason: 'On your mind but not urgent today',
-        status: 'not-started' as const,
-        progressPercent: 0 as const,
-        importanceScore: 3 as const,
-        urgencyScore: 2 as const,
-        createdAt: now, updatedAt: now,
-      })),
+      // "must" → user intent overrides everything: force do-now
+      ...parse(must).map(title => {
+        const scored = scoreTask(title, { importanceWeight: iw, urgencyWeight: uw });
+        return {
+          id: generateId(), title,
+          bucket:              'must-do' as const,
+          recommendationLabel: 'do-now'  as const,
+          recommendationReason: `You flagged this as must-do today${scored.recommendationReason ? ' · ' + scored.recommendationReason.split(' — ')[0].toLowerCase() : ''}`,
+          status:          'not-started' as const,
+          progressPercent: 0             as const,
+          importanceScore: Math.max(scored.importanceScore, 4) as 4 | 5,
+          urgencyScore:    Math.max(scored.urgencyScore,    4) as 4 | 5,
+          createdAt: now, updatedAt: now,
+        };
+      }),
+      // "stress" → high urgency regardless, NLP sets importance
+      ...parse(stress).map(title => {
+        const scored = scoreTask(title, { importanceWeight: iw, urgencyWeight: uw });
+        const urgency    = Math.max(scored.urgencyScore,    4) as 4 | 5;
+        const importance = Math.max(scored.importanceScore, 3) as 3 | 4 | 5;
+        return {
+          id: generateId(), title,
+          bucket:              (importance >= 4 ? 'must-do' : 'should-do') as 'must-do' | 'should-do',
+          recommendationLabel: (importance >= 4 ? 'do-now'  : 'schedule')  as 'do-now'  | 'schedule',
+          recommendationReason: `Flagged as stressful · ${scored.recommendationReason || 'high urgency'}`,
+          status:          'not-started' as const,
+          progressPercent: 0             as const,
+          importanceScore: importance,
+          urgencyScore:    urgency,
+          createdAt: now, updatedAt: now,
+        };
+      }),
+      // "nagging" → pure NLP, cap at schedule (by definition, can wait but lingers)
+      ...parse(nagging).map(title => {
+        const scored = scoreTask(title, { importanceWeight: iw, urgencyWeight: uw });
+        const label  = scored.recommendationLabel === 'do-now' ? 'schedule' as const : scored.recommendationLabel;
+        const bucket = label === 'schedule' ? 'should-do' as const : scored.bucket;
+        return {
+          id: generateId(), title,
+          bucket, recommendationLabel: label,
+          recommendationReason: `On your radar · ${scored.recommendationReason || 'not urgent today'}`,
+          status:          'not-started' as const,
+          progressPercent: 0             as const,
+          importanceScore: scored.importanceScore,
+          urgencyScore:    scored.urgencyScore,
+          createdAt: now, updatedAt: now,
+        };
+      }),
     ];
 
     if (newPriorities.length === 0) return;

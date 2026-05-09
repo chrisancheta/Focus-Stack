@@ -2,33 +2,33 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 /*
-  Actionable recommendation labels — one per card, no ambiguity:
-  do-now       → "Do Now"         amber  — take action immediately
-  schedule     → "Do Today"       sage   — plan this for today's work
-  reconsider   → "Schedule Later" slate  — worth doing, but not today
-  deprioritize → "Defer"          neutral — low priority, revisit later
+  Differentiated recommendation labels — one per card:
+  do-now       → "Must Do"    amber   — act on this today, no question
+  schedule     → "Should Do"  sage    — important, plan it in today's stack
+  reconsider   → "Can Wait"   slate   — worth doing, but not today's priority
+  deprioritize → "Optional"   neutral — low signal, revisit when bandwidth allows
 */
 const CHIP_CONFIG = {
   'do-now': {
-    label: 'Do Now',
+    label: 'Must Do',
     bg: 'rgba(194,130,0,0.13)',
     color: '#6b4800',
     border: 'rgba(194,130,0,0.30)',
   },
   'schedule': {
-    label: 'Do Today',
+    label: 'Should Do',
     bg: 'rgba(107,143,110,0.18)',
     color: '#2a4e2d',
     border: 'rgba(107,143,110,0.36)',
   },
   'reconsider': {
-    label: 'Schedule Later',
+    label: 'Can Wait',
     bg: 'rgba(70,110,180,0.10)',
     color: '#2a3e72',
     border: 'rgba(70,110,180,0.22)',
   },
   'deprioritize': {
-    label: 'Defer',
+    label: 'Optional',
     bg: 'rgba(34,37,39,0.07)',
     color: 'rgba(34,37,39,0.48)',
     border: 'rgba(34,37,39,0.15)',
