@@ -795,7 +795,7 @@ export default function HomePage() {
           <>
             {/* Quick-add strip */}
             <div className="rounded-2xl px-4 pt-3 pb-2.5" style={GLASS_SUBTLE}>
-              <QuickAddInput onAdd={handleQuickAdd} placeholder="Add another priority..." />
+              <QuickAddInput onAdd={handleQuickAdd} placeholder="What else matters today?" />
               <div className="flex items-center justify-between mt-1.5">
                 <p className="text-[10px] text-[#222527]/32">
                   {activePriorities.length < 3
@@ -860,7 +860,7 @@ export default function HomePage() {
             {(candidatePriorities.length > 0 || completedPriorities.length > 0) && (
               <div className="space-y-2 pt-2">
                 {candidatePriorities.length > 0 && (
-                  <CollapsibleSection title="Other Candidates" count={candidatePriorities.length}>
+                  <CollapsibleSection title="Also on your list" count={candidatePriorities.length}>
                     <div className="space-y-2 mt-2">
                       {candidatePriorities.map(p => (
                         <PriorityCard
@@ -908,7 +908,7 @@ export default function HomePage() {
                 <p className="text-[11px] text-[#222527]/34">
                   {completedPriorities.length > 0
                     ? `${completedPriorities.length} done · ${activePriorities.length} left · check-in ${checkInTimeStr}`
-                    : `${activePriorities.length} tasks · check-in ${checkInTimeStr}`}
+                    : `${activePriorities.length} planned · check-in ${checkInTimeStr}`}
                 </p>
                 <button
                   onClick={() => setShowCheckIn(true)}
