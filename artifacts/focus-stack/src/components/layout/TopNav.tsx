@@ -194,20 +194,12 @@ export function TopNav({ effectiveMode }: { effectiveMode: WindowMode }) {
         }}
       >
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <img
             src="/logo.png"
             alt="Focus Stack"
             style={{ height: 23, width: 23, objectFit: 'contain' }}
           />
-          <span
-            style={{
-              fontWeight: 600, color: '#222527', fontSize: 13.5,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            Focus Stack
-          </span>
         </div>
 
         {/* Nav tabs */}
