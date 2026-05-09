@@ -426,6 +426,30 @@ export default function FocusPage() {
         )}
       </div>
 
+      {/* ── Paused state context ──────────────────────────────────────── */}
+      {isPaused && (
+        <div
+          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-2xl"
+          style={{ background: 'rgba(255,255,255,0.42)', border: '1px solid rgba(255,255,255,0.62)' }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full shrink-0"
+            style={{ background: 'rgba(34,37,39,0.28)' }}
+          />
+          <p className="text-[11px] text-[#222527]/55 flex-1">
+            Timer paused
+            {timeLeft > 0 && (
+              <span className="text-[#222527]/38">
+                {' '}· {Math.ceil(timeLeft / 60)}m remaining
+              </span>
+            )}
+          </p>
+          <span className="text-[10px] font-semibold text-[#222527]/36">
+            {Math.round(((duration * 60 - timeLeft) / (duration * 60)) * 100)}% done
+          </span>
+        </div>
+      )}
+
       {/* ── Primary CTA ───────────────────────────────────────────────── */}
       {isDone ? (
         <div className="w-full flex items-center gap-2">

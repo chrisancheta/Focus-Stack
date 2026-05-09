@@ -365,9 +365,12 @@ export function PriorityCard({
               {priority.title}
             </h4>
 
-            {/* ── One-line rationale — always visible ────────────── */}
-            {!isCompleted && priority.recommendationReason && (
-              <p className="text-xs text-[#222527]/58 mt-1.5 leading-snug">
+            {/* ── One-line rationale — always visible for meaningful reasons ── */}
+            {!isCompleted && priority.recommendationReason && priority.recommendationReason !== 'Added just now' && (
+              <p
+                className="text-xs mt-1.5 leading-snug"
+                style={{ color: isRankOne ? 'rgba(34,37,39,0.60)' : 'rgba(34,37,39,0.50)' }}
+              >
                 {priority.recommendationReason}
               </p>
             )}

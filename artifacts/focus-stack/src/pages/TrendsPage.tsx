@@ -226,6 +226,17 @@ function buildRecommendations(data: {
     });
   }
 
+  // Catch-all: always provide one concrete recommendation if there is any data
+  if (recs.length === 0 && (totalPlanned > 0 || streak > 0)) {
+    recs.push({
+      id: 'default', IconComp: Target,
+      title: 'Commit to your top task first thing',
+      body: `Picking 3–5 priorities each morning and completing the top one before anything else is the habit that compounds fastest. Even a single focused session beats a reactive day.`,
+      action: 'Tomorrow: name your #1 priority before opening any messages, then protect the first hour for it.',
+      severity: 'info',
+    });
+  }
+
   // Sort: warnings first, then info, then positive
   const order: Record<Severity, number> = { warning: 0, info: 1, positive: 2 };
   recs.sort((a, b) => order[a.severity] - order[b.severity]);
@@ -291,16 +302,19 @@ function CoachingCard({ rec }: { rec: Recommendation }) {
           <IconComp className="h-4 w-4" style={{ color: s.iconColor }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#222527] leading-snug mb-1.5">{rec.title}</p>
-          <p className="text-xs text-[#222527]/60 leading-relaxed mb-3">{rec.body}</p>
+          <p className="text-sm font-semibold text-[#222527] leading-snug mb-2">{rec.title}</p>
           {rec.action && (
-            <div className="flex items-start gap-1.5">
-              <ArrowRight className="h-3 w-3 mt-0.5 shrink-0" style={{ color: s.actionColor }} />
-              <p className="text-[11px] font-semibold leading-relaxed" style={{ color: s.actionColor }}>
+            <div
+              className="flex items-start gap-2 rounded-xl px-3 py-2 mb-2.5"
+              style={{ background: 'rgba(255,255,255,0.55)', border: `1px solid ${s.border}` }}
+            >
+              <ArrowRight className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: s.actionColor }} />
+              <p className="text-[12px] font-semibold leading-snug" style={{ color: s.actionColor }}>
                 {rec.action}
               </p>
             </div>
           )}
+          <p className="text-[11px] text-[#222527]/52 leading-relaxed">{rec.body}</p>
         </div>
       </div>
     </div>

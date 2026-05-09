@@ -147,7 +147,9 @@ export default function HomePage() {
   const topPriority = mustDoPriorities[0] ?? activePriorities[0] ?? null;
   const nextPriority = activePriorities[1] ?? null;
 
-  const timerProgress = duration > 0 ? Math.round(((duration - timeLeft) / duration) * 100) : 0;
+  const totalSecs = duration * 60;
+  const timerProgress = totalSecs > 0 ? Math.round(((totalSecs - timeLeft) / totalSecs) * 100) : 0;
+  const minsRemaining = Math.ceil(timeLeft / 60);
 
   const checkInTimeStr = state.settings?.reminderTimeLocal
     ? (() => {
@@ -690,11 +692,13 @@ export default function HomePage() {
                     <div className="flex items-center justify-between mt-1.5">
                       <span
                         className="text-[10px] font-medium"
-                        style={{ color: timerState === 'paused' ? 'rgba(34,37,39,0.40)' : 'rgba(34,37,39,0.26)' }}
+                        style={{ color: timerState === 'paused' ? 'rgba(34,37,39,0.55)' : 'rgba(34,37,39,0.30)' }}
                       >
-                        {timerState === 'paused' ? 'Paused — tap Resume to continue' : 'Elapsed'}
+                        {timerState === 'paused'
+                          ? `Paused · ${minsRemaining}m left`
+                          : `${minsRemaining}m remaining`}
                       </span>
-                      <span className="text-[10px] text-[#222527]/26 tabular-nums">{timerProgress}%</span>
+                      <span className="text-[10px] text-[#222527]/26 tabular-nums">{timerProgress}% elapsed</span>
                     </div>
                   </>
                 )}
@@ -1017,8 +1021,30 @@ export default function HomePage() {
           // ── PLANNING STATE ───────────────────────────────────────────────────
           <>
             {/* Quick-add strip */}
-            <div className="rounded-2xl px-4 py-3" style={GLASS_SUBTLE}>
+            <div className="rounded-2xl px-4 pt-3 pb-2.5" style={GLASS_SUBTLE}>
               <QuickAddInput onAdd={handleQuickAdd} placeholder="Add another priority..." />
+              <div className="flex items-center justify-between mt-1.5">
+                <p className="text-[10px] text-[#222527]/32">
+                  {activePriorities.length < 3
+                    ? `${activePriorities.length} added · aim for 3–5`
+                    : activePriorities.length <= 5
+                      ? `${activePriorities.length} tasks · looking good`
+                      : `${activePriorities.length} tasks · consider trimming to 5`}
+                </p>
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="w-1 h-1 rounded-full"
+                      style={{
+                        background: i < Math.min(activePriorities.length, 5)
+                          ? activePriorities.length > 5 ? 'rgba(194,130,0,0.55)' : 'rgba(90,125,93,0.55)'
+                          : 'rgba(34,37,39,0.12)',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Carryover items */}
