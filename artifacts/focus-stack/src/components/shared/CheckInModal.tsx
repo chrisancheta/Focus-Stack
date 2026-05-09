@@ -123,7 +123,8 @@ export function CheckInModal({ isOpen, onClose, priorities, dayPlans, onSave }: 
       setSchedulingFor(null);
       setReflectionChoice(null);
     }
-  }, [isOpen, priorities]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
