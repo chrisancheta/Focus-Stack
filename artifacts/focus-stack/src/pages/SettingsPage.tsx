@@ -6,62 +6,84 @@ import { Slider } from '@/components/ui/slider';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
 import { RecommendationChip } from '@/components/priority/RecommendationChip';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 
 const GLASS = {
-  background: 'rgba(255,255,255,0.55)',
-  backdropFilter: 'blur(20px)',
+  background:           'rgba(255,255,255,0.55)',
+  backdropFilter:       'blur(20px)',
   WebkitBackdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255,255,255,0.72)',
-  boxShadow: '0 2px 16px rgba(34,37,39,0.07)',
-};
-
-const GLASS_ELEVATED = {
-  background: 'rgba(255,255,255,0.68)',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)',
-  border: '1.5px solid rgba(255,255,255,0.88)',
-  boxShadow: '0 4px 24px rgba(34,37,39,0.10)',
+  border:               '1px solid rgba(255,255,255,0.72)',
+  boxShadow:            '0 2px 16px rgba(34,37,39,0.07)',
 };
 
 const GLASS_SUBTLE = {
-  background: 'rgba(255,255,255,0.38)',
-  backdropFilter: 'blur(12px)',
+  background:           'rgba(255,255,255,0.38)',
+  backdropFilter:       'blur(12px)',
   WebkitBackdropFilter: 'blur(12px)',
-  border: '1px solid rgba(255,255,255,0.52)',
+  border:               '1px solid rgba(255,255,255,0.52)',
 };
 
-// ── Collapsible section ────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
-function CollapsibleSection({
+function fmtTime(t: string): string {
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
+
+function AccordionSection({
   title,
+  summary,
   open,
   onToggle,
-  cardStyle,
+  elevated,
   children,
 }: {
-  title: string;
-  open: boolean;
+  title:    string;
+  summary?: string;
+  open:     boolean;
   onToggle: () => void;
-  cardStyle?: React.CSSProperties;
+  elevated?: boolean;
   children: React.ReactNode;
 }) {
+  const style = elevated
+    ? {
+        background:           'rgba(255,255,255,0.68)',
+        backdropFilter:       'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border:               '1.5px solid rgba(255,255,255,0.88)',
+        boxShadow:            '0 4px 24px rgba(34,37,39,0.10)',
+      }
+    : GLASS;
+
   return (
-    <div className="rounded-2xl overflow-hidden" style={cardStyle ?? GLASS}>
+    <div className="rounded-2xl overflow-hidden" style={style}>
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-white/20"
+        className="w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-white/20"
       >
-        <p className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/65">{title}</p>
-        <ChevronDown
-          className="h-4 w-4 text-[#222527]/35 transition-transform duration-200"
-          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
-        />
+        <p className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/60">
+          {title}
+        </p>
+        <div className="flex items-center gap-2.5 shrink-0 ml-3">
+          {!open && summary && (
+            <span className="text-[11px] font-medium text-[#222527]/40">{summary}</span>
+          )}
+          <ChevronDown
+            className="h-3.5 w-3.5 text-[#222527]/32 transition-transform duration-200"
+            style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        </div>
       </button>
+
       {open && (
-        <div className="px-5 pb-5">
+        <div
+          className="px-5 pb-4"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }}
+        >
           {children}
         </div>
       )}
@@ -69,23 +91,21 @@ function CollapsibleSection({
   );
 }
 
-// ── Setting row ────────────────────────────────────────────────────────────────
-
-function SettingRow({
+function Row({
   label,
-  description,
+  hint,
   children,
 }: {
-  label: string;
-  description?: string;
+  label:    string;
+  hint?:    string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
+    <div className="flex items-center justify-between gap-4 py-2.5">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-[#222527]">{label}</p>
-        {description && (
-          <p className="text-xs text-[#222527]/50 mt-0.5 leading-tight">{description}</p>
+        <p className="text-[13px] font-medium text-[#222527] leading-tight">{label}</p>
+        {hint && (
+          <p className="text-[11px] text-[#222527]/42 mt-0.5 leading-tight">{hint}</p>
         )}
       </div>
       <div className="shrink-0">{children}</div>
@@ -93,30 +113,29 @@ function SettingRow({
   );
 }
 
-// ── Recommendation Logic sub-components ───────────────────────────────────────
+// ── Weight split bar ───────────────────────────────────────────────────────────
 
-function WeightSplitBar({ iw, uw }: { iw: number; uw: number }) {
+function WeightBar({ iw, uw }: { iw: number; uw: number }) {
   const total = iw + uw || 1;
-  const iPct = Math.round((iw / total) * 100);
-  const uPct = 100 - iPct;
-
+  const iPct  = Math.round((iw / total) * 100);
+  const uPct  = 100 - iPct;
   return (
-    <div className="space-y-1.5">
-      <div className="flex rounded-xl overflow-hidden h-6 gap-px">
+    <div className="space-y-1">
+      <div className="flex rounded-lg overflow-hidden h-5 gap-px">
         <div
-          className="flex items-center justify-center text-[10px] font-bold text-white transition-all duration-300 ease-out min-w-[32px]"
+          className="flex items-center justify-center text-[10px] font-bold text-white transition-all duration-300 min-w-[28px]"
           style={{ width: `${iPct}%`, background: '#222527' }}
         >
           {iPct}%
         </div>
         <div
-          className="flex items-center justify-center text-[10px] font-bold transition-all duration-300 ease-out min-w-[32px]"
+          className="flex items-center justify-center text-[10px] font-bold transition-all duration-300 min-w-[28px]"
           style={{ width: `${uPct}%`, background: 'rgba(107,143,110,0.72)', color: '#1a3e1d' }}
         >
           {uPct}%
         </div>
       </div>
-      <div className="flex justify-between text-[10px] text-[#222527]/40 px-0.5">
+      <div className="flex justify-between text-[10px] text-[#222527]/36 px-0.5">
         <span>Importance</span>
         <span>Urgency</span>
       </div>
@@ -124,91 +143,65 @@ function WeightSplitBar({ iw, uw }: { iw: number; uw: number }) {
   );
 }
 
+// ── Live ranking preview ───────────────────────────────────────────────────────
+
 const PREVIEW_TASKS = [
   { id: 'a', title: 'Quarterly strategy review', importance: 5, urgency: 1 },
   { id: 'b', title: 'Client escalation call',    importance: 3, urgency: 5 },
   { id: 'c', title: 'Team standup prep',          importance: 2, urgency: 3 },
 ];
-
-const RANK_TO_LABEL: Record<number, 'do-now' | 'schedule' | 'reconsider'> = {
+const RANK_LABEL: Record<number, 'do-now' | 'schedule' | 'reconsider'> = {
   0: 'do-now',
   1: 'schedule',
   2: 'reconsider',
 };
 
-function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
+function LivePreview({ iw, uw }: { iw: number; uw: number }) {
   const maxPossible = 5 * iw + 5 * uw || 1;
-
   const ranked = [...PREVIEW_TASKS]
     .map(t => ({ ...t, score: t.importance * iw + t.urgency * uw }))
     .sort((a, b) => b.score - a.score);
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={GLASS_SUBTLE}>
-      <div
-        className="px-4 py-2.5 flex items-center justify-between"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.55)' }}
-      >
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/55">
-          Live ranking preview
-        </p>
-        <p className="text-[10px] text-[#222527]/36">Adjust sliders to see changes</p>
-      </div>
-
-      <div className="px-4 py-1 divide-y divide-white/35">
-        {ranked.map((t, i) => {
-          const barPct = (t.score / maxPossible) * 100;
-          const chip   = RANK_TO_LABEL[i];
-          return (
-            <div key={t.id} className="flex items-center gap-3 py-2.5">
-              <span
-                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-all duration-300"
-                style={
-                  i === 0
-                    ? { background: '#222527', color: '#fff' }
-                    : { background: 'rgba(34,37,39,0.10)', color: 'rgba(34,37,39,0.52)' }
-                }
-              >
-                {i + 1}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="text-xs font-medium text-[#222527] truncate">{t.title}</span>
-                  <RecommendationChip label={chip} />
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(34,37,39,0.10)' }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-300 ease-out"
-                    style={{
-                      width:      `${barPct}%`,
-                      background: i === 0 ? 'rgba(34,37,39,0.80)' : 'rgba(34,37,39,0.32)',
-                    }}
-                  />
-                </div>
+    <div className="rounded-xl overflow-hidden mt-3" style={GLASS_SUBTLE}>
+      <div className="px-3.5 py-2 divide-y divide-white/35">
+        {ranked.map((t, i) => (
+          <div key={t.id} className="flex items-center gap-2.5 py-2">
+            <span
+              className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 transition-all duration-300"
+              style={
+                i === 0
+                  ? { background: '#222527', color: '#fff' }
+                  : { background: 'rgba(34,37,39,0.10)', color: 'rgba(34,37,39,0.50)' }
+              }
+            >
+              {i + 1}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-[11px] font-medium text-[#222527] truncate">{t.title}</span>
+                <RecommendationChip label={RANK_LABEL[i]} />
+              </div>
+              <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(34,37,39,0.09)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-300 ease-out"
+                  style={{
+                    width:      `${(t.score / maxPossible) * 100}%`,
+                    background: i === 0 ? 'rgba(34,37,39,0.75)' : 'rgba(34,37,39,0.28)',
+                  }}
+                />
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
-
       <div
-        className="px-4 py-3 space-y-1.5"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }}
+        className="px-3.5 py-2"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.48)' }}
       >
-        <p className="text-[10px] font-semibold text-[#222527]/40 mb-2">
+        <p className="text-[10px] text-[#222527]/38">
           score = importance × {Math.round(iw * 100)}% + urgency × {Math.round(uw * 100)}%
         </p>
-        <div className="flex flex-wrap gap-1.5">
-          {(['do-now', 'schedule', 'reconsider', 'deprioritize'] as const).map((label, idx) => {
-            const desc = ['#1 ranked task', '#2 ranked task', '#3+ ranked', 'Lowest scored'][idx];
-            return (
-              <div key={label} className="flex items-center gap-1">
-                <RecommendationChip label={label} />
-                <span className="text-[9px] text-[#222527]/34">{desc}</span>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
@@ -216,75 +209,164 @@ function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
+type Section = 'engine' | 'planning' | 'timer' | 'calendar';
+
+const DEFAULT_SETTINGS = {
+  weekStartDay:          1 as const,
+  activeDays:            [1, 2, 3, 4, 5],
+  reminderTimeLocal:     '16:45',
+  importanceWeight:      0.6,
+  urgencyWeight:         0.4,
+  defaultFocusMinutes:   30 as const,
+  calendarImportEnabled: false,
+  carryoverEnabled:      true,
+  recurringPromptEnabled: true,
+  themeMode:             'light' as const,
+  retentionMode:         'rolling' as const,
+  rollingWindowWeeks:    12,
+  locale:                'en-US',
+};
+
 export default function SettingsPage() {
   const { state, updateSettings, clearData, resetApp } = useAppStore();
-  const { toast } = useToast();
+  const { toast }  = useToast();
+
+  const [openSection,      setOpenSection]      = useState<Section | null>(null);
+  const [showPreview,      setShowPreview]       = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const [open, setOpen] = useState({
-    planning: true,
-    focus: true,
-    prioritization: true,
-    calendar: true,
-  });
-
-  const toggle = (key: keyof typeof open) =>
-    setOpen(prev => ({ ...prev, [key]: !prev[key] }));
-
-  const DEFAULT_SETTINGS = {
-    weekStartDay: 1 as const,
-    activeDays: [1, 2, 3, 4, 5],
-    reminderTimeLocal: '16:45',
-    importanceWeight: 0.6,
-    urgencyWeight: 0.4,
-    defaultFocusMinutes: 30 as const,
-    calendarImportEnabled: false,
-    carryoverEnabled: true,
-    recurringPromptEnabled: true,
-    themeMode: 'light' as const,
-    retentionMode: 'rolling' as const,
-    rollingWindowWeeks: 12,
-    locale: 'en-US',
-  };
-
   const s = state.settings ?? DEFAULT_SETTINGS;
-  const handleChange = (key: keyof typeof s, value: any) => updateSettings({ ...s, [key]: value });
+  const set = (key: keyof typeof s, value: unknown) => updateSettings({ ...s, [key]: value });
 
-  const handleClearData = () => {
+  const toggleSection = (id: Section) =>
+    setOpenSection(prev => (prev === id ? null : id));
+
+  const handleClear = () => {
     clearData();
     setShowClearConfirm(false);
     toast({ title: 'History cleared', description: 'Completed tasks and session history removed.' });
   };
-
-  const handleResetApp = () => {
+  const handleReset = () => {
     resetApp();
     setShowResetConfirm(false);
     window.location.reload();
   };
 
-  const DOW_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  // ── Collapsed summaries ──────────────────────────────────────────────────────
+
+  const DOW  = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const activeDays = s.activeDays ?? [1, 2, 3, 4, 5];
+
+  const iw = s.importanceWeight;
+  const uw = s.urgencyWeight;
+  const engineSummary =
+    Math.abs(iw - uw) < 0.08 ? 'Balanced'
+    : iw > uw ? `Importance ${Math.round(iw * 100)}%`
+    : `Urgency ${Math.round(uw * 100)}%`;
+
+  const planSummary    = `${activeDays.length}d/wk · ${fmtTime(s.reminderTimeLocal)}`;
+  const timerSummary   = `${s.defaultFocusMinutes} min`;
+  const calendarSummary = s.calendarImportEnabled ? 'Enabled' : 'Off';
+
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 pb-12">
+    <div className="space-y-2 pb-10">
 
-      {/* ── Page header ──────────────────────────────────────────────── */}
-      <div className="px-1">
+      {/* ── Page header ─────────────────────────────────────────────────── */}
+      <div className="px-1 pb-1">
         <h2 className="text-base font-semibold text-[#222527] tracking-tight">Settings</h2>
-        <p className="text-xs text-[#222527]/45 mt-0.5">Changes save instantly · everything stays on this device</p>
+        <p className="text-[11px] text-[#222527]/42 mt-0.5">Saves instantly · stays on this device</p>
       </div>
 
-      {/* ── Planning ─────────────────────────────────────────────────── */}
-      <CollapsibleSection title="Planning" open={open.planning} onToggle={() => toggle('planning')}>
-        <div className="divide-y divide-white/35">
+      {/* ── 1. Prioritization Engine ─────────────────────────────────────── */}
+      <AccordionSection
+        title="Prioritization Engine"
+        summary={engineSummary}
+        open={openSection === 'engine'}
+        onToggle={() => toggleSection('engine')}
+        elevated
+      >
+        {/* Intro — one tight sentence */}
+        <p className="text-[11px] text-[#222527]/50 leading-snug mt-3 mb-3">
+          Rates your tasks by combining importance × urgency into a ranked label. Adjust the split to favour strategic depth or deadline response.
+        </p>
 
-          <SettingRow label="Week starts on">
+        {/* Weight bar */}
+        <div className="mb-4">
+          <WeightBar iw={iw} uw={uw} />
+        </div>
+
+        {/* Importance slider */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[13px] font-medium text-[#222527]">Importance weight</p>
+            <span
+              className="text-[11px] font-bold px-2 py-0.5 rounded-full text-[#222527]/65"
+              style={GLASS_SUBTLE}
+            >
+              {Math.round(iw * 100)}%
+            </span>
+          </div>
+          <Slider
+            value={[iw * 100]}
+            max={100} step={5}
+            onValueChange={v => set('importanceWeight', v[0] / 100)}
+            data-testid="slider-importance"
+          />
+        </div>
+
+        {/* Urgency slider */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[13px] font-medium text-[#222527]">Urgency weight</p>
+            <span
+              className="text-[11px] font-bold px-2 py-0.5 rounded-full text-[#222527]/65"
+              style={GLASS_SUBTLE}
+            >
+              {Math.round(uw * 100)}%
+            </span>
+          </div>
+          <Slider
+            value={[uw * 100]}
+            max={100} step={5}
+            onValueChange={v => set('urgencyWeight', v[0] / 100)}
+            data-testid="slider-urgency"
+          />
+        </div>
+
+        {/* Preview toggle */}
+        <button
+          onClick={() => setShowPreview(v => !v)}
+          className="flex items-center gap-1.5 text-[11px] font-medium text-[#222527]/44 hover:text-[#222527]/68 transition-colors"
+        >
+          <ChevronRight
+            className="h-3 w-3 transition-transform duration-150"
+            style={{ transform: showPreview ? 'rotate(90deg)' : 'rotate(0deg)' }}
+          />
+          {showPreview ? 'Hide example' : 'Show example'}
+        </button>
+
+        {showPreview && <LivePreview iw={iw} uw={uw} />}
+      </AccordionSection>
+
+      {/* ── 2. Planning ─────────────────────────────────────────────────── */}
+      <AccordionSection
+        title="Planning"
+        summary={planSummary}
+        open={openSection === 'planning'}
+        onToggle={() => toggleSection('planning')}
+      >
+        <div className="divide-y divide-white/35 mt-1">
+
+          <Row label="Week starts on">
             <Select
               value={s.weekStartDay.toString()}
-              onValueChange={v => handleChange('weekStartDay', parseInt(v))}
+              onValueChange={v => set('weekStartDay', parseInt(v))}
             >
               <SelectTrigger
-                className="w-32 h-9 text-xs border-0 shadow-none rounded-xl"
+                className="w-28 h-8 text-xs border-0 shadow-none rounded-xl"
                 style={GLASS_SUBTLE}
                 data-testid="select-week-start"
               >
@@ -295,27 +377,26 @@ export default function SettingsPage() {
                 <SelectItem value="1">Monday</SelectItem>
               </SelectContent>
             </Select>
-          </SettingRow>
+          </Row>
 
-          <SettingRow label="Active days" description="Counts toward streak and weekly stats">
+          <Row label="Active days">
             <div className="flex gap-1">
-              {DOW_LABELS.map((label, dow) => {
-                const active = (s.activeDays ?? [1,2,3,4,5]).includes(dow);
+              {DOW.map((label, dow) => {
+                const on = activeDays.includes(dow);
                 return (
                   <button
                     key={dow}
                     onClick={() => {
-                      const cur = s.activeDays ?? [1,2,3,4,5];
-                      const next = active
-                        ? cur.filter(d => d !== dow)
-                        : [...cur, dow].sort();
-                      if (next.length > 0) handleChange('activeDays', next);
+                      const next = on
+                        ? activeDays.filter(d => d !== dow)
+                        : [...activeDays, dow].sort();
+                      if (next.length > 0) set('activeDays', next);
                     }}
-                    className="w-7 h-7 rounded-lg text-[11px] font-semibold transition-all hover:opacity-85"
+                    className="w-6 h-6 rounded-md text-[10px] font-bold transition-all hover:opacity-85"
                     style={{
-                      background: active ? '#222527' : 'rgba(255,255,255,0.55)',
-                      color:      active ? 'white'   : 'rgba(34,37,39,0.45)',
-                      border:     active ? 'none'    : '1px solid rgba(255,255,255,0.68)',
+                      background: on ? '#222527' : 'rgba(255,255,255,0.55)',
+                      color:      on ? 'white'   : 'rgba(34,37,39,0.42)',
+                      border:     on ? 'none'    : '1px solid rgba(255,255,255,0.68)',
                     }}
                   >
                     {label}
@@ -323,15 +404,15 @@ export default function SettingsPage() {
                 );
               })}
             </div>
-          </SettingRow>
+          </Row>
 
-          <SettingRow label="Daily check-in time" description="When you review your day">
+          <Row label="Daily check-in">
             <Select
               value={s.reminderTimeLocal}
-              onValueChange={v => handleChange('reminderTimeLocal', v)}
+              onValueChange={v => set('reminderTimeLocal', v)}
             >
               <SelectTrigger
-                className="w-28 h-9 text-xs border-0 shadow-none rounded-xl"
+                className="w-28 h-8 text-xs border-0 shadow-none rounded-xl"
                 style={GLASS_SUBTLE}
                 data-testid="select-reminder-time"
               >
@@ -345,234 +426,144 @@ export default function SettingsPage() {
                 <SelectItem value="17:30">5:30 PM</SelectItem>
               </SelectContent>
             </Select>
-          </SettingRow>
+          </Row>
 
-          <SettingRow
-            label="Carry over incomplete items"
-            description="Move unfinished tasks to tomorrow automatically"
-          >
+          <Row label="Carry over incomplete" hint="Move unfinished tasks to tomorrow">
             <Switch
               checked={s.carryoverEnabled}
-              onCheckedChange={v => handleChange('carryoverEnabled', v)}
+              onCheckedChange={v => set('carryoverEnabled', v)}
               data-testid="toggle-carryover"
             />
-          </SettingRow>
+          </Row>
 
-          <SettingRow
-            label="Recurring item daily prompt"
-            description="Ask each morning whether to include recurring tasks"
-          >
+          <Row label="Daily recurring prompt" hint="Ask each morning about recurring tasks">
             <Switch
               checked={s.recurringPromptEnabled}
-              onCheckedChange={v => handleChange('recurringPromptEnabled', v)}
+              onCheckedChange={v => set('recurringPromptEnabled', v)}
               data-testid="toggle-recurring"
             />
-          </SettingRow>
+          </Row>
 
         </div>
-      </CollapsibleSection>
+      </AccordionSection>
 
-      {/* ── Focus Timer ──────────────────────────────────────────────── */}
-      <CollapsibleSection title="Focus Timer" open={open.focus} onToggle={() => toggle('focus')}>
-        <SettingRow
-          label="Default session length"
-          description="Each Pomodoro block runs this long. Task cards show matching estimates (~25m, ~45m) to help you choose the right session."
-        >
-          <Select
-            value={s.defaultFocusMinutes.toString()}
-            onValueChange={v => handleChange('defaultFocusMinutes', parseInt(v))}
-          >
-            <SelectTrigger
-              className="w-28 h-9 text-xs border-0 shadow-none rounded-xl"
-              style={GLASS_SUBTLE}
-              data-testid="select-focus-duration"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="25">25 minutes</SelectItem>
-              <SelectItem value="30">30 minutes</SelectItem>
-              <SelectItem value="45">45 minutes</SelectItem>
-              <SelectItem value="60">60 minutes</SelectItem>
-              <SelectItem value="90">90 minutes</SelectItem>
-            </SelectContent>
-          </Select>
-        </SettingRow>
-      </CollapsibleSection>
-
-      {/* ── Prioritization Engine ─────────────────────────────────────── */}
-      <CollapsibleSection
-        title="Prioritization Engine"
-        open={open.prioritization}
-        onToggle={() => toggle('prioritization')}
-        cardStyle={GLASS_ELEVATED}
+      {/* ── 3. Focus Timer ──────────────────────────────────────────────── */}
+      <AccordionSection
+        title="Focus Timer"
+        summary={timerSummary}
+        open={openSection === 'timer'}
+        onToggle={() => toggleSection('timer')}
       >
-        <p className="text-xs text-[#222527]/50 leading-relaxed mb-5">
-          When you rate a task's importance and urgency (1–5), these weights combine both scores into a final ranking. The highest-scoring task becomes <strong className="text-[#6b4800] font-semibold">Do Now</strong>, second becomes <strong className="text-[#2a4e2d] font-semibold">Do Today</strong>, and so on. Adjust to favor strategic depth or deadline-driven responsiveness.
-        </p>
-
-        {/* Weight split bar */}
-        <div className="mb-5">
-          <WeightSplitBar iw={s.importanceWeight} uw={s.urgencyWeight} />
-        </div>
-
-        {/* Importance slider */}
-        <div className="space-y-2 mb-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[#222527]">Importance weight</p>
-              <p className="text-[10px] text-[#222527]/45 mt-0.5">Rewards long-term, goal-aligned work</p>
-            </div>
-            <span
-              className="text-xs font-bold px-2.5 py-1 rounded-full text-[#222527]/70"
-              style={GLASS_SUBTLE}
+        <div className="mt-1">
+          <Row label="Default session length" hint="Pomodoro block duration">
+            <Select
+              value={s.defaultFocusMinutes.toString()}
+              onValueChange={v => set('defaultFocusMinutes', parseInt(v))}
             >
-              {Math.round(s.importanceWeight * 100)}%
-            </span>
-          </div>
-          <Slider
-            value={[s.importanceWeight * 100]}
-            max={100}
-            step={5}
-            onValueChange={v => handleChange('importanceWeight', v[0] / 100)}
-            data-testid="slider-importance"
-          />
-          <div className="flex justify-between text-[10px] text-[#222527]/35 px-0.5">
-            <span>Not weighted</span>
-            <span>Heavily weighted</span>
-          </div>
+              <SelectTrigger
+                className="w-28 h-8 text-xs border-0 shadow-none rounded-xl"
+                style={GLASS_SUBTLE}
+                data-testid="select-focus-duration"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="45">45 minutes</SelectItem>
+                <SelectItem value="60">60 minutes</SelectItem>
+                <SelectItem value="90">90 minutes</SelectItem>
+              </SelectContent>
+            </Select>
+          </Row>
         </div>
+      </AccordionSection>
 
-        {/* Urgency slider */}
-        <div className="space-y-2 mb-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[#222527]">Urgency weight</p>
-              <p className="text-[10px] text-[#222527]/45 mt-0.5">Rewards deadline-driven, time-sensitive work</p>
-            </div>
-            <span
-              className="text-xs font-bold px-2.5 py-1 rounded-full text-[#222527]/70"
-              style={GLASS_SUBTLE}
-            >
-              {Math.round(s.urgencyWeight * 100)}%
-            </span>
-          </div>
-          <Slider
-            value={[s.urgencyWeight * 100]}
-            max={100}
-            step={5}
-            onValueChange={v => handleChange('urgencyWeight', v[0] / 100)}
-            data-testid="slider-urgency"
-          />
-          <div className="flex justify-between text-[10px] text-[#222527]/35 px-0.5">
-            <span>Not weighted</span>
-            <span>Heavily weighted</span>
-          </div>
+      {/* ── 4. Calendar ─────────────────────────────────────────────────── */}
+      <AccordionSection
+        title="Calendar"
+        summary={calendarSummary}
+        open={openSection === 'calendar'}
+        onToggle={() => toggleSection('calendar')}
+      >
+        <div className="mt-1">
+          <Row label="Calendar import" hint="Import events as draft priority cards">
+            <Switch
+              checked={s.calendarImportEnabled}
+              onCheckedChange={v => set('calendarImportEnabled', v)}
+              data-testid="toggle-calendar"
+            />
+          </Row>
+          {s.calendarImportEnabled && (
+            <p className="text-[11px] text-[#222527]/48 leading-snug mt-1 pb-1">
+              Provider connection coming soon. Events are parsed on-device — nothing leaves your browser.
+            </p>
+          )}
         </div>
+      </AccordionSection>
 
-        {/* Live preview */}
-        <LiveRankingPreview iw={s.importanceWeight} uw={s.urgencyWeight} />
-      </CollapsibleSection>
-
-      {/* ── Calendar ─────────────────────────────────────────────────── */}
-      <CollapsibleSection title="Calendar" open={open.calendar} onToggle={() => toggle('calendar')}>
-        <SettingRow
-          label="Enable calendar import"
-          description="Import events as draft priority cards"
-        >
-          <Switch
-            checked={s.calendarImportEnabled}
-            onCheckedChange={v => handleChange('calendarImportEnabled', v)}
-            data-testid="toggle-calendar"
-          />
-        </SettingRow>
-        {s.calendarImportEnabled && (
-          <div
-            className="mt-2 rounded-xl px-4 py-3 text-xs text-[#222527]/55 leading-relaxed"
-            style={GLASS_SUBTLE}
-          >
-            Calendar provider connection coming soon. Events are parsed on-device — nothing is sent to external servers.
-          </div>
-        )}
-      </CollapsibleSection>
-
-      {/* ── Privacy & Data (static, not collapsible) ─────────────────── */}
+      {/* ── 5. Privacy & Data ───────────────────────────────────────────── */}
       <div
-        className="rounded-2xl p-5"
+        className="rounded-2xl overflow-hidden"
         style={{
-          background: 'rgba(34,37,39,0.06)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(34,37,39,0.10)',
+          background:           'rgba(34,37,39,0.05)',
+          backdropFilter:       'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border:               '1px solid rgba(34,37,39,0.09)',
         }}
       >
-        <p className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/65 mb-4">Privacy & Data</p>
-
-        {/* Privacy statement */}
-        <div
-          className="rounded-2xl p-4 mb-4"
-          style={{
-            background: 'rgba(255,255,255,0.48)',
-            border: '1px solid rgba(255,255,255,0.65)',
-          }}
-        >
-          <p className="text-sm font-semibold text-[#222527] mb-1.5">Focus Stack is fully local-first</p>
-          <p className="text-xs text-[#222527]/60 leading-relaxed mb-3">
-            No account required. No sync. No analytics. Everything you create here lives only in your browser's local storage and is never transmitted anywhere.
-          </p>
-          <div className="space-y-1">
-            {[
-              'Tasks and priorities',
-              'Focus sessions and timers',
-              'Weekly trends and patterns',
-              'All settings and preferences',
-            ].map(item => (
-              <div key={item} className="flex items-center gap-2">
-                <div className="w-1 h-1 rounded-full shrink-0" style={{ background: 'rgba(107,143,110,0.80)' }} />
-                <span className="text-xs text-[#222527]/55">{item}</span>
-              </div>
-            ))}
+        {/* Trust statement */}
+        <div className="px-5 py-3.5">
+          <div className="flex items-start gap-2.5">
+            <div
+              className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.5"
+              style={{ background: 'rgba(107,143,110,0.80)' }}
+            />
+            <div>
+              <p className="text-[13px] font-semibold text-[#222527]">Local-first · No sync · No analytics</p>
+              <p className="text-[11px] text-[#222527]/48 mt-0.5 leading-snug">
+                Everything you create lives only in your browser's local storage and is never transmitted anywhere.
+              </p>
+            </div>
           </div>
-          <p className="text-[10px] font-semibold text-[#222527]/45 mt-3">
-            All of the above → stored on this device only
-          </p>
         </div>
 
-        {/* Data management */}
-        <div className="space-y-2">
+        {/* Divider */}
+        <div style={{ height: '1px', background: 'rgba(34,37,39,0.08)' }} />
+
+        {/* Destructive actions */}
+        <div className="px-5 py-3 flex items-center gap-2.5">
           <button
             onClick={() => setShowClearConfirm(true)}
-            className="w-full h-10 rounded-xl text-sm font-medium text-[#222527]/65 hover:text-[#222527] transition-colors"
+            className="flex-1 h-8 rounded-xl text-[12px] font-medium text-[#222527]/58 hover:text-[#222527] transition-colors"
             style={{
-              background: 'rgba(255,255,255,0.45)',
-              border: '1px solid rgba(255,255,255,0.62)',
+              background: 'rgba(255,255,255,0.42)',
+              border:     '1px solid rgba(255,255,255,0.60)',
             }}
             data-testid="button-clear-history"
           >
-            Clear completed history
+            Clear history
           </button>
           <button
             onClick={() => setShowResetConfirm(true)}
-            className="w-full h-10 rounded-xl text-sm font-medium transition-colors hover:opacity-90"
+            className="flex-1 h-8 rounded-xl text-[12px] font-medium transition-colors hover:opacity-90"
             style={{
-              background: 'rgba(239,68,68,0.08)',
-              border: '1px solid rgba(239,68,68,0.22)',
-              color: 'rgba(220,38,38,0.80)',
+              background: 'rgba(239,68,68,0.07)',
+              border:     '1px solid rgba(239,68,68,0.18)',
+              color:      'rgba(220,38,38,0.75)',
             }}
             data-testid="button-reset-app"
           >
-            Reset Focus Stack
+            Reset all data
           </button>
-          <p className="text-[10px] text-[#222527]/35 text-center pt-1">
-            Reset removes all data and settings permanently
-          </p>
         </div>
       </div>
 
+      {/* ── Modals ───────────────────────────────────────────────────────── */}
       <ConfirmModal
         isOpen={showClearConfirm}
         onClose={() => setShowClearConfirm(false)}
-        onConfirm={handleClearData}
+        onConfirm={handleClear}
         title="Clear local data?"
         description="This removes all completed priorities, day plans, and trend history. Active tasks are kept."
         confirmText="Clear data"
@@ -580,10 +571,10 @@ export default function SettingsPage() {
       <ConfirmModal
         isOpen={showResetConfirm}
         onClose={() => setShowResetConfirm(false)}
-        onConfirm={handleResetApp}
+        onConfirm={handleReset}
         title="Reset completely?"
-        description="This wipes all settings and data. You will be taken back to the initial setup screen."
-        confirmText="Reset app"
+        description="All tasks, sessions, settings, and history will be permanently deleted. This cannot be undone."
+        confirmText="Reset Focus Stack"
       />
     </div>
   );
