@@ -159,55 +159,7 @@ export default function FocusPage() {
   return (
     <div className="flex flex-col items-center gap-3 pb-8 max-w-md mx-auto w-full">
 
-      {/* ── Pomodoro context bar ───────────────────────────────────────── */}
-      <div className="w-full flex items-center justify-between px-1 pt-1">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: setSize }).map((_, i) => {
-              const filled = i < positionInSet;
-              const isNext = i === positionInSet && !isDone;
-              return (
-                <span key={i} style={{
-                  display:      'block',
-                  width:        filled ? 9 : isNext ? 7 : 6,
-                  height:       filled ? 9 : isNext ? 7 : 6,
-                  borderRadius: '50%',
-                  background:   filled ? '#222527' : isNext ? 'rgba(34,37,39,0.28)' : 'rgba(34,37,39,0.12)',
-                  border:       isNext ? '1.5px solid rgba(34,37,39,0.35)' : 'none',
-                  transition:   'all 0.3s',
-                }} />
-              );
-            })}
-          </div>
-          <span className="text-xs font-medium text-[#222527]/55">{pomodoroPosLabel}</span>
-          {completedSets > 0 && (
-            <span className="text-[11px] text-[#222527]/35">
-              · {completedSets} {completedSets === 1 ? 'set' : 'sets'} done
-            </span>
-          )}
-        </div>
-        {!isDone && (
-          <div
-            className="flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium"
-            style={{ background: 'rgba(255,255,255,0.42)', border: '1px solid rgba(255,255,255,0.60)', color: 'rgba(34,37,39,0.50)' }}
-          >
-            <span
-              className="h-1.5 w-1.5 rounded-full inline-block"
-              style={{ background: positionInSet === 3 ? '#6B8F6E' : 'rgba(34,37,39,0.28)' }}
-            />
-            Next: {nextBreakType}
-          </div>
-        )}
-      </div>
-
-      {/* ── Timer widget ───────────────────────────────────────────────── */}
-      <div className="w-full flex justify-center" style={{ marginTop: '-44px', marginBottom: '-44px' }}>
-        <div style={{ transform: 'scale(0.82)', transformOrigin: 'center' }}>
-          <FocusTimerWidget />
-        </div>
-      </div>
-
-      {/* ── Session identity card + picker ─────────────────────────────── */}
+      {/* ── 1. Current task — task identity first ──────────────────────── */}
       <div className="w-full relative" ref={pickerRef}>
 
         {linked ? (
@@ -252,19 +204,13 @@ export default function FocusPage() {
               <p className="text-[15px] font-semibold text-[#222527] leading-snug mb-1.5">
                 {linked.title}
               </p>
-              {linked.recommendationReason && (
-                <p className="text-[11px] text-[#222527]/42 leading-snug mb-2">
-                  {linked.recommendationReason}
-                </p>
-              )}
-              {/* Up next — only when linked task is #1 in today's plan */}
+              {/* Up next — compact, no chip */}
               {linkedRankInToday === 1 && nextTodayPriority && (
-                <div className="flex items-center gap-1.5 mt-1">
+                <div className="flex items-center gap-1.5 mt-2">
                   <span className="text-[10px] text-[#222527]/28">Up next:</span>
-                  <span className="text-[10px] font-medium text-[#222527]/48 truncate max-w-[166px]">
+                  <span className="text-[10px] font-medium text-[#222527]/44 truncate max-w-[210px]">
                     {nextTodayPriority.title}
                   </span>
-                  <RecommendationChip label={nextTodayPriority.recommendationLabel} />
                 </div>
               )}
             </div>
@@ -465,6 +411,56 @@ export default function FocusPage() {
           </div>
         )}
       </div>
+
+      {/* ── 2. Pomodoro context bar ─────────────────────────────────────── */}
+      <div className="w-full flex items-center justify-between px-1">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: setSize }).map((_, i) => {
+              const filled = i < positionInSet;
+              const isNext = i === positionInSet && !isDone;
+              return (
+                <span key={i} style={{
+                  display:      'block',
+                  width:        filled ? 9 : isNext ? 7 : 6,
+                  height:       filled ? 9 : isNext ? 7 : 6,
+                  borderRadius: '50%',
+                  background:   filled ? '#222527' : isNext ? 'rgba(34,37,39,0.28)' : 'rgba(34,37,39,0.12)',
+                  border:       isNext ? '1.5px solid rgba(34,37,39,0.35)' : 'none',
+                  transition:   'all 0.3s',
+                }} />
+              );
+            })}
+          </div>
+          <span className="text-xs font-medium text-[#222527]/55">{pomodoroPosLabel}</span>
+          {completedSets > 0 && (
+            <span className="text-[11px] text-[#222527]/35">
+              · {completedSets} {completedSets === 1 ? 'set' : 'sets'} done
+            </span>
+          )}
+        </div>
+        {!isDone && (
+          <div
+            className="flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium"
+            style={{ background: 'rgba(255,255,255,0.42)', border: '1px solid rgba(255,255,255,0.60)', color: 'rgba(34,37,39,0.50)' }}
+          >
+            <span
+              className="h-1.5 w-1.5 rounded-full inline-block"
+              style={{ background: positionInSet === 3 ? '#6B8F6E' : 'rgba(34,37,39,0.28)' }}
+            />
+            Next: {nextBreakType}
+          </div>
+        )}
+      </div>
+
+      {/* ── 3. Timer ────────────────────────────────────────────────────── */}
+      <div className="w-full flex justify-center" style={{ marginTop: '-44px', marginBottom: '-44px' }}>
+        <div style={{ transform: 'scale(0.82)', transformOrigin: 'center' }}>
+          <FocusTimerWidget />
+        </div>
+      </div>
+
+      {/* ── 4. Supporting context ────────────────────────────────────────── */}
 
       {/* ── Paused state context ──────────────────────────────────────── */}
       {isPaused && (

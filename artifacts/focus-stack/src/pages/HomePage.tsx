@@ -492,7 +492,7 @@ export default function HomePage() {
               <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid rgba(34,37,39,0.06)' }}>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#5a7d5d' }} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/45">Day started</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/45">Priorities locked</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -531,9 +531,6 @@ export default function HomePage() {
                     <p className="font-bold text-[#222527] leading-tight mb-1" style={{ fontSize: '18px', lineHeight: '1.25' }}>
                       {topPriority.title}
                     </p>
-                    {topPriority.recommendationReason && (
-                      <p className="text-[11px] text-[#222527]/44 leading-snug">{topPriority.recommendationReason}</p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -576,17 +573,16 @@ export default function HomePage() {
 
               {/* Up Next */}
               {nextPriority && (
-                <div className="px-5 py-3">
-                  <div className="flex items-center gap-2.5">
+                <div className="px-5 py-2.5">
+                  <div className="flex items-center gap-2">
                     <span
                       className="text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                      style={{ background: 'rgba(34,37,39,0.09)', color: 'rgba(34,37,39,0.46)' }}
+                      style={{ background: 'rgba(34,37,39,0.08)', color: 'rgba(34,37,39,0.42)' }}
                     >
                       2
                     </span>
-                    <p className="text-[13px] text-[#222527]/55 flex-1 truncate">{nextPriority.title}</p>
-                    {nextPriority.recommendationLabel && <RecommendationChip label={nextPriority.recommendationLabel} />}
-                    {nextDuration && <span className="text-[10px] text-[#222527]/28 shrink-0">{nextDuration}</span>}
+                    <p className="text-[12px] text-[#222527]/48 flex-1 truncate">{nextPriority.title}</p>
+                    {nextDuration && <span className="text-[10px] text-[#222527]/26 shrink-0">{nextDuration}</span>}
                   </div>
                 </div>
               )}

@@ -44,8 +44,8 @@ const ghostStyle: React.CSSProperties = {
 
 const KEYFRAMES = `
   @keyframes breathe {
-    0%, 100% { transform: scale(1);    opacity: 0.20; }
-    50%       { transform: scale(1.08); opacity: 0.07; }
+    0%, 100% { transform: scale(1);    opacity: 0.12; }
+    50%       { transform: scale(1.03); opacity: 0.02; }
   }
   @keyframes bloom {
     0%   { transform: scale(0.98); opacity: 0.55; }
@@ -96,7 +96,7 @@ function TimerFace({
         height={SVG_SIZE}
         viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
         overflow="visible"
-        style={{ filter: 'drop-shadow(0 6px 28px rgba(34,37,39,0.11))' }}
+        style={{ filter: 'drop-shadow(0 3px 16px rgba(34,37,39,0.07))' }}
       >
         <defs>
           <radialGradient id="discGrad" cx="38%" cy="32%" r="72%">
@@ -109,9 +109,9 @@ function TimerFace({
         <circle
           cx={CENTER} cy={CENTER}
           r={HALO_R + 10}
-          fill="rgba(144,157,146,0.09)"
-          stroke="rgba(144,157,146,0.24)"
-          strokeWidth="1.5"
+          fill="rgba(144,157,146,0.03)"
+          stroke="rgba(144,157,146,0.12)"
+          strokeWidth="1"
           className={`halo-ring${isRunning ? ' breathing' : ''}`}
           style={{ opacity: isRunning ? undefined : 0, transition: 'opacity 0.8s ease' }}
         />
