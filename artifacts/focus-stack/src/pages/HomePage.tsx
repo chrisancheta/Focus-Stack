@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Play, Pause, X, ArrowRight } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAppStore } from '@/lib/storeContext';
 import { useTimer } from '@/lib/timerContext';
@@ -38,6 +38,12 @@ const GLASS_SUBTLE = {
   border: '1px solid rgba(255,255,255,0.52)',
 };
 
+function formatTime(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
 function getRecurringIdsForToday(priorities: ReturnType<typeof useAppStore>['state']['priorities'], today: string): string[] {
   const todayDow = new Date(today + 'T12:00:00').getDay();
   return priorities
@@ -54,7 +60,7 @@ function getRecurringIdsForToday(priorities: ReturnType<typeof useAppStore>['sta
 
 export default function HomePage() {
   const { state, addPriority, updatePriority, deletePriority, addDayPlan, updateDayPlan } = useAppStore();
-  const { linkPriority, toggle, isRunning } = useTimer();
+  const { linkPriority, toggle, isRunning, timeLeft, isDone } = useTimer();
   const [, setLocation] = useLocation();
   const [selectedPriorityId, setSelectedPriorityId] = useState<string | null>(null);
   const [showCheckIn, setShowCheckIn] = useState(false);
@@ -75,7 +81,6 @@ export default function HomePage() {
   const todayPlan = state.dayPlans.find(dp => dp.date === today);
   const priorities = state.priorities;
 
-  // Auto-inject recurring priorities into today's plan whenever priorities change
   const injectedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!todayPlan) return;
@@ -107,16 +112,14 @@ export default function HomePage() {
     ? priorities.filter(p => todayPlan.candidatePriorityIds.includes(p.id))
     : [];
 
-  // Only show priorities actually recorded as completed today — avoid leaking
-  // globally-completed priorities from previous days into the current list.
   const completedPriorities = todayPlan
     ? priorities.filter(p => todayPlan.completedPriorityIds.includes(p.id))
     : [];
 
   const activePriorities = selectedPriorities.filter(p => p.status !== 'completed');
   const mustDoPriorities = activePriorities.filter(p => p.bucket === 'must-do');
-  const otherFocusPriorities = activePriorities.filter(p => p.bucket !== 'must-do');
   const topPriority = mustDoPriorities[0] ?? activePriorities[0] ?? null;
+  const nextPriority = activePriorities[1] ?? null;
 
   const doAdd = (title: string) => {
     const newPriority = {
@@ -168,14 +171,8 @@ export default function HomePage() {
     }
   };
 
-  const handleDedupCombine = () => {
-    setPendingAdd(null);
-  };
-
-  const handleDedupKeepBoth = () => {
-    if (pendingAdd) doAdd(pendingAdd.title);
-    setPendingAdd(null);
-  };
+  const handleDedupCombine = () => { setPendingAdd(null); };
+  const handleDedupKeepBoth = () => { if (pendingAdd) doAdd(pendingAdd.title); setPendingAdd(null); };
 
   const handleSuggestMyDay = ({ must, stress, nagging }: { must: string; stress: string; nagging: string }) => {
     const now = new Date().toISOString();
@@ -324,9 +321,7 @@ export default function HomePage() {
     setFocusMode(true);
   };
 
-  const handleExitFocusMode = () => {
-    setFocusMode(false);
-  };
+  const handleExitFocusMode = () => setFocusMode(false);
 
   const handleClearCompleted = () => {
     if (!todayPlan) return;
@@ -342,103 +337,129 @@ export default function HomePage() {
 
   return (
     <div className="space-y-4">
-      {focusMode && (
+
+      {/* ── Floating focus widget ────────────────────────────────────────────── */}
+      {focusMode && topPriority && (
         <div
-          className="fixed inset-0 z-50 flex flex-col overflow-hidden"
-          style={{ background: 'linear-gradient(145deg, #c8d4be 0%, #bccaaf 40%, #b2c1a3 100%)' }}
+          className="fixed bottom-6 right-6 z-50 w-80 rounded-2xl overflow-hidden"
+          style={{
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(28px)',
+            WebkitBackdropFilter: 'blur(28px)',
+            border: '1.5px solid rgba(255,255,255,0.96)',
+            boxShadow: '0 16px 48px rgba(34,37,39,0.20), 0 4px 16px rgba(34,37,39,0.10)',
+          }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 shrink-0">
-            <div className="flex items-center gap-3">
-              <div
-                className="h-7 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5"
-                style={{ background: 'rgba(255,255,255,0.35)', color: 'rgba(34,37,39,0.65)', border: '1px solid rgba(255,255,255,0.55)' }}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-[#5a7d5d] inline-block" />
-                Focus Mode
-              </div>
-              {isRunning && (
-                <div
-                  className="h-7 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5"
-                  style={{ background: 'rgba(107,143,110,0.20)', color: '#5a7d5d', border: '1px solid rgba(107,143,110,0.30)' }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                  Timer running
-                </div>
-              )}
+          <div
+            className="flex items-center justify-between px-4 py-3"
+            style={{ borderBottom: '1px solid rgba(34,37,39,0.07)' }}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{
+                  background: isRunning ? '#5a7d5d' : 'rgba(34,37,39,0.28)',
+                  boxShadow: isRunning ? '0 0 6px rgba(90,125,93,0.55)' : 'none',
+                }}
+              />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/55">
+                {isDone ? 'Session done' : isRunning ? 'In Focus' : 'Focus Mode'}
+              </span>
             </div>
             <button
               onClick={handleExitFocusMode}
-              className="h-9 px-4 rounded-full text-xs font-semibold transition-all hover:opacity-80"
-              style={{ background: 'rgba(255,255,255,0.45)', color: 'rgba(34,37,39,0.70)', border: '1px solid rgba(255,255,255,0.62)' }}
+              className="text-[#222527]/35 hover:text-[#222527]/65 transition-colors p-0.5 rounded-lg hover:bg-black/5"
             >
-              Exit focus
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto px-6 pb-8">
-            <div className="max-w-2xl mx-auto w-full space-y-3">
-              {/* Focus label */}
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 px-1 mb-1">
-                {mustDoPriorities.length > 0 ? 'Must Do' : "Today's Focus"}
+          {/* Task */}
+          <div className="px-4 pt-3 pb-2">
+            <p className="text-sm font-semibold text-[#222527] leading-snug line-clamp-2 mb-0.5">
+              {topPriority.title}
+            </p>
+            {topPriority.recommendationReason && (
+              <p className="text-[11px] text-[#222527]/45 leading-snug">
+                {topPriority.recommendationReason}
               </p>
-
-              {/* Top priority — highlighted */}
-              {topPriority && (
-                <div
-                  className="transition-transform"
-                  style={{ transform: 'scale(1.015)', transformOrigin: 'top center' }}
-                >
-                  <div
-                    className="rounded-2xl overflow-hidden"
-                    style={{ boxShadow: '0 8px 32px rgba(34,37,39,0.16), 0 0 0 2px rgba(255,255,255,0.70)' }}
-                  >
-                    <PriorityCard
-                      priority={topPriority}
-                      onClick={() => setSelectedPriorityId(topPriority.id)}
-                      onComplete={() => handleComplete(topPriority.id)}
-                      onStartFocus={() => handleStartFocus(topPriority.id)}
-                      onNoteChange={note => updatePriority(topPriority.id, { notes: note })}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Other must-do tasks */}
-              {mustDoPriorities.slice(1).map(p => (
-                <div key={p.id} className="opacity-80">
-                  <PriorityCard
-                    priority={p}
-                    onClick={() => setSelectedPriorityId(p.id)}
-                    onComplete={() => handleComplete(p.id)}
-                    onStartFocus={() => handleStartFocus(p.id)}
-                    onNoteChange={note => updatePriority(p.id, { notes: note })}
-                  />
-                </div>
-              ))}
-
-              {/* Non-must-do collapsed indicator */}
-              {otherFocusPriorities.length > 0 && (
-                <div
-                  className="rounded-2xl px-4 py-3 flex items-center justify-between"
-                  style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.30)' }}
-                >
-                  <span className="text-xs font-medium text-[#222527]/40">
-                    {otherFocusPriorities.length} other {otherFocusPriorities.length === 1 ? 'task' : 'tasks'} hidden
-                  </span>
-                  <button
-                    onClick={handleExitFocusMode}
-                    className="text-xs text-[#222527]/40 hover:text-[#222527]/65 transition-colors underline-offset-2 hover:underline"
-                  >
-                    View all
-                  </button>
-                </div>
-              )}
-            </div>
+            )}
           </div>
+
+          {/* Timer block */}
+          <div
+            className="mx-4 mb-3 rounded-xl px-4 py-2.5 flex items-center justify-between"
+            style={{
+              background: isDone
+                ? 'rgba(107,143,110,0.12)'
+                : isRunning
+                  ? 'rgba(34,37,39,0.05)'
+                  : 'rgba(34,37,39,0.04)',
+              border: '1px solid rgba(255,255,255,0.72)',
+            }}
+          >
+            <span className="text-2xl font-light text-[#222527] tabular-nums tracking-tight">
+              {isDone ? '0:00' : formatTime(timeLeft)}
+            </span>
+            {!isDone && (
+              <button
+                onClick={e => { e.stopPropagation(); toggle(); }}
+                className="flex items-center gap-1.5 h-8 px-3.5 rounded-full text-xs font-semibold transition-all hover:opacity-85 active:scale-95"
+                style={isRunning
+                  ? { background: 'rgba(255,255,255,0.80)', color: 'rgba(34,37,39,0.68)', border: '1px solid rgba(34,37,39,0.12)' }
+                  : { background: '#222527', color: '#fff', boxShadow: '0 2px 8px rgba(34,37,39,0.18)' }}
+              >
+                {isRunning
+                  ? <><Pause className="h-3 w-3" />Pause</>
+                  : <><Play className="h-3 w-3" />Resume</>
+                }
+              </button>
+            )}
+            {isDone && (
+              <span className="text-xs font-semibold text-[#5a7d5d]">Complete!</span>
+            )}
+          </div>
+
+          {/* Quick actions */}
+          <div className="px-4 pb-4 flex gap-2">
+            <button
+              onClick={() => { handleComplete(topPriority.id); }}
+              className="flex-1 h-8 rounded-xl text-xs font-semibold transition-all hover:opacity-85 active:scale-95"
+              style={{
+                background: 'rgba(107,143,110,0.16)',
+                color: '#2a4e2d',
+                border: '1px solid rgba(107,143,110,0.30)',
+              }}
+            >
+              ✓ Done
+            </button>
+            <button
+              onClick={() => setLocation('/focus')}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-semibold transition-all hover:opacity-85"
+              style={{
+                background: 'rgba(34,37,39,0.07)',
+                color: 'rgba(34,37,39,0.60)',
+                border: '1px solid rgba(34,37,39,0.10)',
+              }}
+            >
+              Open timer
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+
+          {/* Next up */}
+          {nextPriority && (
+            <div
+              className="px-4 py-2.5"
+              style={{ borderTop: '1px solid rgba(34,37,39,0.06)' }}
+            >
+              <p className="text-[10px] text-[#222527]/38 leading-snug">
+                <span className="font-semibold text-[#222527]/45">Next: </span>
+                {nextPriority.title}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -640,33 +661,83 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* ── Start My Day / Focus Mode CTA ───────────────────────── */}
           {activePriorities.length > 0 && (
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                onClick={handleStartMyDay}
-                className="flex-1 h-12 rounded-2xl font-semibold text-sm tracking-wide transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2"
-                style={{ background: '#222527', color: '#fff', boxShadow: '0 4px 18px rgba(34,37,39,0.22)' }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-80" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-                Start My Day
-              </button>
-              <button
-                onClick={() => setAutoStartPomodoro(a => !a)}
-                title={autoStartPomodoro ? 'Auto-start Pomodoro timer (on)' : 'Auto-start Pomodoro timer (off)'}
-                className="h-12 px-4 rounded-2xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0"
-                style={{
-                  background: autoStartPomodoro ? 'rgba(107,143,110,0.18)' : 'rgba(255,255,255,0.45)',
-                  border: autoStartPomodoro ? '1px solid rgba(107,143,110,0.32)' : '1px solid rgba(255,255,255,0.58)',
-                  color: autoStartPomodoro ? '#5a7d5d' : 'rgba(34,37,39,0.40)',
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                Timer
-              </button>
+            <div className="space-y-2 pt-1">
+              {focusMode ? (
+                /* Active day mode — focus widget is floating */
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex-1 h-12 rounded-2xl flex items-center gap-3 px-4"
+                    style={{
+                      background: 'rgba(107,143,110,0.12)',
+                      border: '1px solid rgba(107,143,110,0.25)',
+                    }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{
+                        background: isRunning ? '#5a7d5d' : 'rgba(34,37,39,0.28)',
+                        boxShadow: isRunning ? '0 0 6px rgba(90,125,93,0.50)' : 'none',
+                      }}
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-[#5a7d5d] leading-tight">
+                        Focus Mode Active
+                      </p>
+                      <p className="text-[10px] text-[#5a7d5d]/65">
+                        {isRunning ? `Timer running · ${formatTime(timeLeft)}` : 'Timer paused — widget in the corner'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleExitFocusMode}
+                    className="h-12 px-4 rounded-2xl text-xs font-semibold transition-all hover:opacity-85"
+                    style={{
+                      background: 'rgba(255,255,255,0.55)',
+                      color: 'rgba(34,37,39,0.58)',
+                      border: '1px solid rgba(255,255,255,0.72)',
+                    }}
+                  >
+                    Exit
+                  </button>
+                </div>
+              ) : (
+                /* Planning mode — ready to commit and start */
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleStartMyDay}
+                      className="flex-1 h-12 rounded-2xl font-semibold text-sm tracking-wide transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2"
+                      style={{ background: '#222527', color: '#fff', boxShadow: '0 4px 18px rgba(34,37,39,0.22)' }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-80" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                      Start My Day
+                    </button>
+                    <button
+                      onClick={() => setAutoStartPomodoro(a => !a)}
+                      title={autoStartPomodoro ? 'Auto-start timer on (click to turn off)' : 'Auto-start timer off (click to turn on)'}
+                      className="h-12 px-4 rounded-2xl text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0"
+                      style={{
+                        background: autoStartPomodoro ? 'rgba(107,143,110,0.18)' : 'rgba(255,255,255,0.45)',
+                        border: autoStartPomodoro ? '1px solid rgba(107,143,110,0.32)' : '1px solid rgba(255,255,255,0.58)',
+                        color: autoStartPomodoro ? '#5a7d5d' : 'rgba(34,37,39,0.40)',
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                      Timer
+                    </button>
+                  </div>
+                  {/* Workflow hint */}
+                  <p className="text-[10px] text-[#222527]/38 text-center leading-relaxed">
+                    Commits your list · links timer to <span className="font-semibold text-[#222527]/48">{topPriority?.title?.slice(0, 28)}{(topPriority?.title?.length ?? 0) > 28 ? '…' : ''}</span> · focus widget appears
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -749,9 +820,7 @@ export default function HomePage() {
                     background: todayPlan.checkInCompleted
                       ? 'rgba(107,143,110,0.15)'
                       : 'rgba(107,143,110,0.18)',
-                    color: todayPlan.checkInCompleted
-                      ? '#5a7d5d'
-                      : '#2a4e2d',
+                    color: todayPlan.checkInCompleted ? '#5a7d5d' : '#2a4e2d',
                     border: todayPlan.checkInCompleted
                       ? '1px solid rgba(107,143,110,0.30)'
                       : '1px solid rgba(107,143,110,0.35)',

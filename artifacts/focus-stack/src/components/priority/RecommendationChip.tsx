@@ -2,36 +2,36 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 /*
-  Semantic colour system — each chip communicates a distinct action signal:
-  do-now     → Warm amber   — "take action immediately"
-  schedule   → Blue-slate   — "plan and book time"
-  reconsider → Ochre/yellow — "pause and question this"
-  deprioritize → Muted red  — "consider dropping"
+  Actionable recommendation labels — one per card, no ambiguity:
+  do-now       → "Do Now"         amber  — take action immediately
+  schedule     → "Do Today"       sage   — plan this for today's work
+  reconsider   → "Schedule Later" slate  — worth doing, but not today
+  deprioritize → "Defer"          neutral — low priority, revisit later
 */
 const CHIP_CONFIG = {
   'do-now': {
-    label: 'Do now',
+    label: 'Do Now',
     bg: 'rgba(194,130,0,0.13)',
     color: '#6b4800',
     border: 'rgba(194,130,0,0.30)',
   },
   'schedule': {
-    label: 'Schedule',
-    bg: 'rgba(70,110,180,0.11)',
-    color: '#2a3e72',
-    border: 'rgba(70,110,180,0.25)',
+    label: 'Do Today',
+    bg: 'rgba(107,143,110,0.18)',
+    color: '#2a4e2d',
+    border: 'rgba(107,143,110,0.36)',
   },
   'reconsider': {
-    label: 'Reconsider',
-    bg: 'rgba(175,148,0,0.12)',
-    color: '#5a4900',
-    border: 'rgba(175,148,0,0.26)',
+    label: 'Schedule Later',
+    bg: 'rgba(70,110,180,0.10)',
+    color: '#2a3e72',
+    border: 'rgba(70,110,180,0.22)',
   },
   'deprioritize': {
-    label: 'Deprioritize',
-    bg: 'rgba(180,50,50,0.10)',
-    color: 'rgba(150,35,35,0.78)',
-    border: 'rgba(180,50,50,0.22)',
+    label: 'Defer',
+    bg: 'rgba(34,37,39,0.07)',
+    color: 'rgba(34,37,39,0.48)',
+    border: 'rgba(34,37,39,0.15)',
   },
 };
 

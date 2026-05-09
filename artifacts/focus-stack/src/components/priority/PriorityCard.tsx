@@ -103,17 +103,17 @@ function getTierConfig(
 function getQuadrant(importanceScore: number, urgencyScore: number) {
   const hi = importanceScore >= 4;
   const hu = urgencyScore >= 4;
-  if (hi && hu)  return { label: 'Must Do',   row: 0, col: 0 };
-  if (hi && !hu) return { label: 'Schedule',  row: 0, col: 1 };
-  if (!hi && hu) return { label: 'Delegate',  row: 1, col: 0 };
-  return            { label: 'Eliminate', row: 1, col: 1 };
+  if (hi && hu)  return { label: 'Do First',   row: 0, col: 0 };
+  if (hi && !hu) return { label: 'Schedule',   row: 0, col: 1 };
+  if (!hi && hu) return { label: 'Delegate',   row: 1, col: 0 };
+  return            { label: 'Drop or Defer', row: 1, col: 1 };
 }
 
 function quadrantStyle(label: string): React.CSSProperties {
-  if (label === 'Must Do')   return { background: 'rgba(34,37,39,0.10)',    color: 'rgba(34,37,39,0.80)' };
-  if (label === 'Schedule')  return { background: 'rgba(70,110,180,0.12)',  color: '#2a3e72' };
-  if (label === 'Delegate')  return { background: 'rgba(194,130,0,0.13)',   color: '#6b4800' };
-  return                            { background: 'rgba(180,50,50,0.10)',   color: 'rgba(150,35,35,0.78)' };
+  if (label === 'Do First')     return { background: 'rgba(34,37,39,0.10)',    color: 'rgba(34,37,39,0.80)' };
+  if (label === 'Schedule')     return { background: 'rgba(70,110,180,0.12)',  color: '#2a3e72' };
+  if (label === 'Delegate')     return { background: 'rgba(194,130,0,0.13)',   color: '#6b4800' };
+  return                               { background: 'rgba(34,37,39,0.07)',    color: 'rgba(34,37,39,0.48)' };
 }
 
 function MiniMatrix({ row, col }: { row: number; col: number }) {
@@ -151,13 +151,13 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
 
 interface PriorityCardProps {
   priority: PriorityType;
-  rank?: number;              // 1–3 for top-priority emphasis
+  rank?: number;
   onClick?: () => void;
   onComplete?: () => void;
   onDefer?: () => void;
   onStartFocus?: () => void;
   onNoteChange?: (note: string) => void;
-  onDismiss?: () => void;     // for carryover "Needs Attention" cards
+  onDismiss?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   showMoveControls?: boolean;
@@ -204,10 +204,29 @@ export function PriorityCard({
     if (!noteValue) setNoteOpen(false);
   };
 
-  // Extra elevation for top rank
-  const rankShadow = rank === 1
-    ? '0 6px 32px rgba(34,37,39,0.14), 0 0 0 1.5px rgba(34,37,39,0.10)'
+  // ── Rank-1 visual overrides ─────────────────────────────────────────────────
+  const isRankOne = rank === 1 && !isCarryover && !isCompleted;
+
+  const cardBg = isRankOne
+    ? (priority.bucket === 'must-do' ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.75)')
+    : tier.bg;
+
+  const cardBorder = isRankOne
+    ? '2px solid rgba(255,255,255,0.96)'
+    : tier.border;
+
+  const cardShadow = isRankOne
+    ? '0 14px 44px rgba(34,37,39,0.18), 0 4px 16px rgba(34,37,39,0.09), 0 0 0 1px rgba(255,255,255,0.85)'
     : tier.shadow;
+
+  // Show "Focus" button in strip only for actionable, high-priority tasks
+  const showFocusInStrip = !isCompleted && !!onStartFocus
+    && priority.bucket !== 'could-do'
+    && (!rank || rank <= 2);
+
+  const focusBtnStyle: React.CSSProperties = isRankOne
+    ? { background: '#222527', color: '#fff', boxShadow: '0 2px 8px rgba(34,37,39,0.16)' }
+    : { background: 'rgba(255,255,255,0.65)', color: 'rgba(34,37,39,0.70)', border: '1px solid rgba(255,255,255,0.82)' };
 
   return (
     <div
@@ -216,11 +235,11 @@ export function PriorityCard({
         isCompleted && 'opacity-55',
       )}
       style={{
-        background: tier.bg,
+        background: cardBg,
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        border: tier.border,
-        boxShadow: rankShadow,
+        border: cardBorder,
+        boxShadow: cardShadow,
       }}
       onClick={onClick}
       data-testid={`priority-card-${priority.id}`}
@@ -255,7 +274,7 @@ export function PriorityCard({
             {/* ── Chip row + rank badge ──────────────────────────── */}
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <BucketBadge bucket={priority.bucket} />
+                {/* Single recommendation chip — primary action signal */}
                 {!isCompleted && priority.recommendationLabel && (
                   <RecommendationChip label={priority.recommendationLabel} />
                 )}
@@ -282,11 +301,14 @@ export function PriorityCard({
               <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
                 {rank && rank <= 3 && (
                   <span
-                    className="text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                    className={cn(
+                      'font-bold rounded-full flex items-center justify-center shrink-0 transition-all',
+                      rank === 1 ? 'text-xs w-7 h-7' : 'text-[10px] w-5 h-5',
+                    )}
                     style={rank === 1
-                      ? { background: '#222527', color: '#fff' }
-                      : { background: 'rgba(34,37,39,0.12)', color: 'rgba(34,37,39,0.65)' }}
-                    title={`Priority #${rank}`}
+                      ? { background: '#222527', color: '#fff', boxShadow: '0 2px 10px rgba(34,37,39,0.22)' }
+                      : { background: 'rgba(34,37,39,0.10)', color: 'rgba(34,37,39,0.55)' }}
+                    title={rank === 1 ? 'Top Priority' : `Priority #${rank}`}
                   >
                     {rank}
                   </span>
@@ -343,36 +365,30 @@ export function PriorityCard({
               {priority.title}
             </h4>
 
-            {/* ── Recommendation reason — always visible ─────────── */}
+            {/* ── One-line rationale — always visible ────────────── */}
             {!isCompleted && priority.recommendationReason && (
-              <p className="text-[11px] text-[#222527]/55 mt-1.5 leading-snug line-clamp-2">
+              <p className="text-xs text-[#222527]/58 mt-1.5 leading-snug">
                 {priority.recommendationReason}
               </p>
             )}
 
-            {/* ── Meta row ──────────────────────────────────────── */}
-            <div className="flex items-center gap-2 flex-wrap mt-2">
-              {priority.estimatedMinutes && (
-                <div className="flex items-center gap-1 text-xs text-[#222527]/55">
-                  <Clock className="h-3 w-3" />
-                  <span>{priority.estimatedMinutes}m</span>
-                </div>
-              )}
-              {priority.dueDate && (
-                <div className="flex items-center gap-1 text-xs text-[#222527]/55">
-                  <Calendar className="h-3 w-3" />
-                  <span>{priority.dueDate}</span>
-                </div>
-              )}
-              {!isCompleted && (
-                <span
-                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-                  style={quadrantStyle(quadrant.label)}
-                >
-                  {quadrant.label}
-                </span>
-              )}
-            </div>
+            {/* ── Meta row — duration + due date only ───────────── */}
+            {(priority.estimatedMinutes || priority.dueDate) && (
+              <div className="flex items-center gap-2 flex-wrap mt-2">
+                {priority.estimatedMinutes && (
+                  <div className="flex items-center gap-1 text-xs text-[#222527]/50">
+                    <Clock className="h-3 w-3" />
+                    <span>{priority.estimatedMinutes}m</span>
+                  </div>
+                )}
+                {priority.dueDate && (
+                  <div className="flex items-center gap-1 text-xs text-[#222527]/50">
+                    <Calendar className="h-3 w-3" />
+                    <span>{priority.dueDate}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ── Progress bar ──────────────────────────────────── */}
             {priority.status === 'in-progress' && priority.progressPercent > 0 && priority.progressPercent < 100 && (
@@ -418,18 +434,16 @@ export function PriorityCard({
             style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Left: primary actions */}
+            {/* Left: Focus + Dismiss */}
             <div className="flex items-center gap-1.5">
-              {onStartFocus && (
+              {showFocusInStrip && (
                 <button
                   onClick={onStartFocus}
                   className="flex items-center gap-1.5 h-7 px-3 rounded-full text-[11px] font-semibold transition-all hover:opacity-85 active:scale-95"
-                  style={priority.bucket === 'must-do'
-                    ? { background: '#222527', color: '#fff' }
-                    : { background: 'rgba(255,255,255,0.65)', color: 'rgba(34,37,39,0.70)', border: '1px solid rgba(255,255,255,0.80)' }}
+                  style={focusBtnStyle}
                 >
                   <Play className="h-3 w-3" />
-                  Start Focus
+                  Focus
                 </button>
               )}
               {onDismiss && (
@@ -448,7 +462,7 @@ export function PriorityCard({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setWhyOpen(w => !w)}
-                className="flex items-center gap-0.5 text-[11px] text-[#222527]/45 hover:text-[#222527]/70 transition-colors"
+                className="flex items-center gap-0.5 text-[11px] text-[#222527]/40 hover:text-[#222527]/65 transition-colors"
               >
                 <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', whyOpen && 'rotate-180')} />
                 Why this?
@@ -466,7 +480,7 @@ export function PriorityCard({
           </div>
         )}
 
-        {/* Completed state indicator */}
+        {/* Completed indicator */}
         {isCompleted && (
           <div className="flex items-center gap-1.5 mt-2">
             <CheckCircle2 className="h-3.5 w-3.5 text-[#222527]/35" />
@@ -476,14 +490,32 @@ export function PriorityCard({
 
         {/* ── Why this? accordion ────────────────────────────────── */}
         {whyOpen && (
-          <div className="mt-3 pt-2.5 flex items-start gap-3" style={{ borderTop: '1px solid rgba(255,255,255,0.45)' }}>
-            <MiniMatrix row={quadrant.row} col={quadrant.col} />
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-4">
-                <ScoreBar label="Importance" score={priority.importanceScore} />
-                <ScoreBar label="Urgency" score={priority.urgencyScore} />
+          <div
+            className="mt-3 pt-3 space-y-3"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.45)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Bucket + quadrant classification */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <BucketBadge bucket={priority.bucket} />
+              <span
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                style={quadrantStyle(quadrant.label)}
+              >
+                {quadrant.label}
+              </span>
+            </div>
+
+            {/* Score breakdown */}
+            <div className="flex items-start gap-3">
+              <MiniMatrix row={quadrant.row} col={quadrant.col} />
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-4">
+                  <ScoreBar label="Importance" score={priority.importanceScore} />
+                  <ScoreBar label="Urgency" score={priority.urgencyScore} />
+                </div>
+                <p className="text-[10px] text-[#222527]/50 leading-relaxed">{tooltipText}</p>
               </div>
-              <p className="text-[10px] text-[#222527]/50 leading-relaxed max-w-[230px]">{tooltipText}</p>
             </div>
           </div>
         )}
