@@ -20,7 +20,7 @@ export default function WelcomePage() {
           className="mx-auto mb-7 h-14 w-auto object-contain"
         />
         <p className="text-xl text-[#222527]/55 leading-relaxed mb-9">
-          Optimize your priorities.
+          Start your day with clarity.
         </p>
 
         <div className="flex flex-col gap-3">
@@ -30,7 +30,7 @@ export default function WelcomePage() {
             style={{ background: '#222527' }}
             data-testid="button-start"
           >
-            Start
+            Start My Day
           </Link>
           <Link
             href="/setup"
