@@ -4,23 +4,27 @@ import { cn } from '@/lib/utils';
 import { useTimer } from '@/lib/timerContext';
 import { useAppStore } from '@/lib/storeContext';
 
-// ── Clock SVG geometry ────────────────────────────────────────────────────────
-const SVG_SIZE    = 340;
-const CENTER      = SVG_SIZE / 2;
-const TICK_R_OUT  = 156;
-const TICK_R_LONG = 140;
-const TICK_R_SHORT= 149;
-const PROGRESS_R  = 128;
-const PROGRESS_C  = 2 * Math.PI * PROGRESS_R;
-const BG_R        = 162;
+// ── Geometry ──────────────────────────────────────────────────────────────────
 
-// ── Orbital layout ────────────────────────────────────────────────────────────
+const SVG_SIZE  = 340;
+const CENTER    = SVG_SIZE / 2;   // 170
+
+const DISC_R    = 154;            // main glass disc radius
+const HALO_R    = 168;            // breathing halo sits just outside disc
+const ARC_R     = 130;            // progress arc radius
+const ARC_C     = 2 * Math.PI * ARC_R;
+
+// Orbital preset-button layout
 const CONTAINER  = 440;
 const CX         = CONTAINER / 2;
 const CY         = CONTAINER / 2;
 const SVG_OFFSET = (CONTAINER - SVG_SIZE) / 2;
 const ORBIT_R    = 196;
 const BTN_S      = 44;
+
+// Checkmark path centered at (170, 170), fits within ~50×38 px
+const CHECK_D   = `M 148 172 L 164 188 L 196 151`;
+const CHECK_LEN = 73; // approximate path length for dash animation
 
 function clockPos(hour: number, btnSize: number) {
   const rad = (hour * 30 * Math.PI) / 180;
@@ -30,17 +34,47 @@ function clockPos(hour: number, btnSize: number) {
   };
 }
 
-function polarToXY(cx: number, cy: number, r: number, deg: number) {
-  const rad = ((deg - 90) * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
-
 const ghostStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.55)',
-  backdropFilter: 'blur(10px)',
+  background:           'rgba(255,255,255,0.55)',
+  backdropFilter:       'blur(10px)',
   WebkitBackdropFilter: 'blur(10px)',
-  border: '1px solid rgba(255,255,255,0.70)',
+  border:               '1px solid rgba(255,255,255,0.70)',
 };
+
+// ── Animations (injected once via <style>) ────────────────────────────────────
+
+const KEYFRAMES = `
+  @keyframes breathe {
+    0%, 100% { transform: scale(1);    opacity: 0.20; }
+    50%       { transform: scale(1.08); opacity: 0.07; }
+  }
+  @keyframes bloom {
+    0%   { transform: scale(0.98); opacity: 0.55; }
+    100% { transform: scale(1.38); opacity: 0;    }
+  }
+  @keyframes checkDraw {
+    from { stroke-dashoffset: ${CHECK_LEN}; }
+    to   { stroke-dashoffset: 0; }
+  }
+  .halo-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .halo-ring.breathing {
+    animation: breathe 4s ease-in-out infinite;
+  }
+  .bloom-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: bloom 1s cubic-bezier(0.2, 0, 0.4, 1) forwards;
+  }
+  .check-path {
+    stroke-dasharray: ${CHECK_LEN};
+    animation: checkDraw 0.45s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+  }
+`;
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export function FocusTimerWidget() {
   const { state } = useAppStore();
@@ -49,42 +83,43 @@ export function FocusTimerWidget() {
     linkedPriorityId, toggle, reset, setDuration,
   } = useTimer();
 
-  const [customInput,      setCustomInput]      = useState('');
-  const [showCustomInput,  setShowCustomInput]  = useState(false);
+  const [customInput,     setCustomInput]     = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
-  const mins       = Math.floor(timeLeft / 60);
-  const secs       = timeLeft % 60;
-  const totalSecs  = duration * 60;
-  const progress   = totalSecs > 0 ? (totalSecs - timeLeft) / totalSecs : 0;
-  const dashOffset = PROGRESS_C * (1 - progress);
-  const isCustom   = ![30, 60].includes(duration);
+  // ── Derived ────────────────────────────────────────────────────────────────
 
-  const linked = linkedPriorityId
-    ? state.priorities.find(p => p.id === linkedPriorityId)
-    : null;
+  const mins      = Math.floor(timeLeft / 60);
+  const secs      = timeLeft % 60;
+  const totalSecs = duration * 60;
+  const progress  = totalSecs > 0 ? (totalSecs - timeLeft) / totalSecs : 0;
+  const dashOff   = ARC_C * (1 - progress);
+  const isPaused  = !isRunning && !isDone && timeLeft < totalSecs;
+  const isIdle    = !isRunning && !isDone && timeLeft === totalSecs;
+  const isCustom  = ![30, 60].includes(duration);
+
+  // Arc end-dot position (tip of the arc, rotated from -90°)
+  const arcEndAngleDeg = -90 + progress * 360;
+  const arcEndRad      = (arcEndAngleDeg * Math.PI) / 180;
+  const arcEndX        = CENTER + ARC_R * Math.cos(arcEndRad);
+  const arcEndY        = CENTER + ARC_R * Math.sin(arcEndRad);
+
+  // State-adaptive colours
+  const arcStroke     = isDone  ? '#6B8F6E' : '#222527';
+  const arcOpacity    = isPaused ? 0.38 : 1;
+  const timeTextFill  = isDone   ? '#6B8F6E'
+                      : isPaused ? 'rgba(34,37,39,0.40)'
+                      : '#222527';
+  const labelFill     = isDone   ? '#6B8F6E'
+                      : isPaused ? 'rgba(34,37,39,0.30)'
+                      : 'rgba(34,37,39,0.36)';
 
   let statusLabel: string;
-  if (linked) {
-    const t = linked.title;
-    statusLabel = t.length > 18 ? t.slice(0, 18) + '…' : t;
-  } else if (isDone) {
-    statusLabel = 'DONE';
-  } else if (isRunning) {
-    statusLabel = 'IN FOCUS';
-  } else if (progress > 0) {
-    statusLabel = 'CLICK TO RESUME';
-  } else {
-    statusLabel = 'CLICK TO START';
-  }
+  if (isDone)       statusLabel = 'DONE';
+  else if (isRunning) statusLabel = 'IN FOCUS';
+  else if (isPaused)  statusLabel = 'PAUSED';
+  else                statusLabel = 'CLICK TO START';
 
-  const ticks = Array.from({ length: 60 }, (_, i) => {
-    const isLong = i % 5 === 0;
-    return {
-      inner: polarToXY(CENTER, CENTER, isLong ? TICK_R_LONG : TICK_R_SHORT, i * 6),
-      outer: polarToXY(CENTER, CENTER, TICK_R_OUT, i * 6),
-      isLong,
-    };
-  });
+  // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleSetCustom = () => {
     const v = parseInt(customInput);
@@ -97,11 +132,14 @@ export function FocusTimerWidget() {
     [isCustom ? `${duration}m` : '···', 4, 'custom'],
   ];
 
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <div className="flex items-center justify-center select-none">
+      <style>{KEYFRAMES}</style>
       <div className="relative" style={{ width: CONTAINER, height: CONTAINER }}>
 
-        {/* ── Clock face (clickable) ─────────────────────────────────────── */}
+        {/* ── Clickable timer face ───────────────────────────────────────── */}
         <div
           className="absolute"
           style={{ left: SVG_OFFSET, top: SVG_OFFSET, cursor: 'pointer' }}
@@ -109,88 +147,158 @@ export function FocusTimerWidget() {
           title={isDone ? 'Click to reset' : isRunning ? 'Click to pause' : 'Click to start'}
         >
           <svg
-            width={SVG_SIZE} height={SVG_SIZE}
+            width={SVG_SIZE}
+            height={SVG_SIZE}
             viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
-            style={{ filter: 'drop-shadow(0 8px 32px rgba(34,37,39,0.13))' }}
+            overflow="visible"
+            style={{ filter: 'drop-shadow(0 6px 28px rgba(34,37,39,0.11))' }}
           >
             <defs>
-              <radialGradient id="clockBg" cx="50%" cy="50%" r="50%">
-                <stop offset="0%"   stopColor="#F5F7F4" stopOpacity="1" />
-                <stop offset="65%"  stopColor="#E8EDE6" stopOpacity="1" />
-                <stop offset="100%" stopColor="#D8DFD5" stopOpacity="1" />
+              {/* Disc radial gradient — slightly lighter at top-left */}
+              <radialGradient id="discGrad" cx="38%" cy="32%" r="72%">
+                <stop offset="0%"   stopColor="#F8FAF7" />
+                <stop offset="55%"  stopColor="#EFF2ED" />
+                <stop offset="100%" stopColor="#E4E9E1" />
               </radialGradient>
-              <style>{`
-                @keyframes clockPulse {
-                  0%   { transform: scale(1);    opacity: 0.50; }
-                  100% { transform: scale(1.12); opacity: 0;    }
-                }
-                .clock-pulse-ring {
-                  transform-box: fill-box;
-                  transform-origin: center;
-                  animation: clockPulse 2s ease-out infinite;
-                }
-              `}</style>
             </defs>
 
-            {isRunning && (
+            {/* ── 1. Breathing halo — visible and animating only when running ── */}
+            <circle
+              cx={CENTER} cy={CENTER}
+              r={HALO_R + 10}
+              fill="rgba(144,157,146,0.09)"
+              stroke="rgba(144,157,146,0.24)"
+              strokeWidth="1.5"
+              className={`halo-ring${isRunning ? ' breathing' : ''}`}
+              style={{
+                opacity:    isRunning ? undefined : 0,
+                transition: 'opacity 0.8s ease',
+              }}
+            />
+
+            {/* ── 2. Bloom ring — mounts fresh (key) when done, fires once ── */}
+            {isDone && (
               <circle
-                cx={CENTER} cy={CENTER} r={BG_R}
-                fill="rgba(144,157,146,0.28)"
-                stroke="none"
-                className="clock-pulse-ring"
+                key="bloom"
+                cx={CENTER} cy={CENTER}
+                r={DISC_R}
+                fill="none"
+                stroke="rgba(107,143,110,0.38)"
+                strokeWidth="3"
+                className="bloom-ring"
               />
             )}
 
-            <circle cx={CENTER} cy={CENTER} r={BG_R} fill="url(#clockBg)" />
-            <circle cx={CENTER} cy={CENTER} r={BG_R}
-              fill="none" stroke="rgba(255,255,255,0.80)" strokeWidth="1.5" />
-
-            {ticks.map((t, i) => (
-              <line key={i}
-                x1={t.inner.x} y1={t.inner.y}
-                x2={t.outer.x} y2={t.outer.y}
-                stroke={t.isLong ? 'rgba(34,37,39,0.38)' : 'rgba(34,37,39,0.14)'}
-                strokeWidth={t.isLong ? 2 : 1}
-                strokeLinecap="round"
-              />
-            ))}
-
-            <circle cx={CENTER} cy={CENTER} r={PROGRESS_R}
-              fill="none" stroke="rgba(144,157,146,0.18)" strokeWidth="4" />
-
-            <circle cx={CENTER} cy={CENTER} r={PROGRESS_R}
+            {/* ── 3. Main disc ── */}
+            <circle
+              cx={CENTER} cy={CENTER}
+              r={DISC_R}
+              fill="url(#discGrad)"
+            />
+            {/* Rim highlight */}
+            <circle
+              cx={CENTER} cy={CENTER}
+              r={DISC_R}
               fill="none"
-              stroke={isDone ? '#6B8F6E' : '#222527'}
-              strokeWidth="4" strokeLinecap="round"
-              strokeDasharray={PROGRESS_C}
-              strokeDashoffset={dashOffset}
-              transform={`rotate(-90 ${CENTER} ${CENTER})`}
-              style={{ transition: 'stroke-dashoffset 0.9s linear' }}
+              stroke="rgba(255,255,255,0.88)"
+              strokeWidth="1.5"
+            />
+            {/* Subtle inner shadow suggestion at bottom */}
+            <circle
+              cx={CENTER} cy={CENTER}
+              r={DISC_R - 1}
+              fill="none"
+              stroke="rgba(34,37,39,0.04)"
+              strokeWidth="3"
             />
 
-            <text x={CENTER} y={CENTER - 10}
-              textAnchor="middle" dominantBaseline="middle"
-              fontSize="50" fontWeight="300"
-              fontFamily="'DM Sans', sans-serif"
-              fill={isDone ? '#6B8F6E' : '#222527'}
-              letterSpacing="-2"
-            >
-              {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-            </text>
+            {/* ── 4. Arc track (full 360°, muted background) ── */}
+            <circle
+              cx={CENTER} cy={CENTER}
+              r={ARC_R}
+              fill="none"
+              stroke="rgba(144,157,146,0.13)"
+              strokeWidth="6"
+            />
 
-            <text x={CENTER} y={CENTER + 30}
-              textAnchor="middle" dominantBaseline="middle"
-              fontSize="10" fontWeight="400"
+            {/* ── 5. Progress arc ── */}
+            <circle
+              cx={CENTER} cy={CENTER}
+              r={ARC_R}
+              fill="none"
+              stroke={arcStroke}
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={ARC_C}
+              strokeDashoffset={dashOff}
+              transform={`rotate(-90 ${CENTER} ${CENTER})`}
+              style={{
+                opacity:    arcOpacity,
+                transition: 'stroke-dashoffset 0.95s linear, stroke 0.55s ease, opacity 0.40s ease',
+              }}
+            />
+
+            {/* ── 6. Arc end-dot — tracks the leading edge while running ── */}
+            {isRunning && progress > 0.005 && progress < 0.998 && (
+              <circle
+                cx={arcEndX} cy={arcEndY}
+                r={3.5}
+                fill="#222527"
+                style={{
+                  filter:     'drop-shadow(0 1px 3px rgba(34,37,39,0.28))',
+                  transition: 'cx 0.95s linear, cy 0.95s linear',
+                }}
+              />
+            )}
+
+            {/* ── 7. Center content: time or checkmark ── */}
+            {isDone ? (
+              /* Checkmark draws in on completion */
+              <path
+                d={CHECK_D}
+                fill="none"
+                stroke="#6B8F6E"
+                strokeWidth="5.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="check-path"
+                style={{ strokeDashoffset: CHECK_LEN }}
+              />
+            ) : (
+              <text
+                x={CENTER} y={CENTER - 8}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="50"
+                fontWeight="300"
+                fontFamily="'DM Sans', sans-serif"
+                fill={timeTextFill}
+                letterSpacing="-2"
+                style={{ transition: 'fill 0.40s ease' }}
+              >
+                {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+              </text>
+            )}
+
+            {/* ── 8. Status label ── */}
+            <text
+              x={CENTER}
+              y={isDone ? CENTER + 22 : CENTER + 30}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="9.5"
+              fontWeight="500"
               fontFamily="'DM Sans', sans-serif"
-              fill={isDone ? '#6B8F6E' : 'rgba(34,37,39,0.42)'}
-              letterSpacing="1.4"
+              fill={labelFill}
+              letterSpacing="2"
+              style={{ transition: 'fill 0.40s ease, y 0.40s ease' }}
             >
-              {statusLabel.toUpperCase()}
+              {statusLabel}
             </text>
           </svg>
         </div>
 
-        {/* ── Preset buttons — 2, 3, 4 o'clock ─────────────────────────── */}
+        {/* ── Preset duration buttons — 2, 3, 4 o'clock ─────────────────── */}
         {presets.map(([label, hour, value]) => {
           const pos      = clockPos(hour, BTN_S);
           const isActive = value === 'custom' ? isCustom : duration === value && !isCustom;
@@ -207,7 +315,7 @@ export function FocusTimerWidget() {
                   value={customInput}
                   onChange={e => setCustomInput(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === 'Enter') handleSetCustom();
+                    if (e.key === 'Enter')  handleSetCustom();
                     if (e.key === 'Escape') setShowCustomInput(false);
                   }}
                   placeholder="min"
@@ -230,12 +338,12 @@ export function FocusTimerWidget() {
               key={String(value)}
               onClick={() => {
                 if (value === 'custom') setShowCustomInput(true);
-                else { setDuration(value); setShowCustomInput(false); }
+                else { setDuration(value as number); setShowCustomInput(false); }
               }}
               disabled={isRunning}
               className={cn(
                 'absolute rounded-full text-sm font-medium transition-all disabled:opacity-40 flex items-center justify-center',
-                isActive ? 'text-white shadow-md' : 'text-[#222527]/70 hover:text-[#222527]',
+                isActive ? 'text-white' : 'text-[#222527]/70 hover:text-[#222527]',
               )}
               style={{
                 ...pos, width: BTN_S, height: BTN_S,
