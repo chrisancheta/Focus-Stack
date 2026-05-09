@@ -15,13 +15,19 @@ import { findSimilar } from '@/lib/similarity';
 import type { SimilarMatch } from '@/lib/similarity';
 
 const PLACEHOLDER_EXAMPLES = [
-  "What's on your mind today?",
-  'Build-a-thon submission by 12a ET',
-  "What feels urgent but maybe isn't?",
-  'Work on MBA capstone project today',
-  'What would make today successful?',
-  'Research AI-powered PM tools this week',
+  'Finish the project proposal before Friday',
+  'Call the insurance company back',
+  "Prep slides for tomorrow's standup",
+  'Clear my inbox from this week',
+  'Review the draft contract',
+  'Block time for deep work this afternoon',
 ];
+
+const EXAMPLE_ENTRIES = [
+  'Finish project proposal draft',
+  'Prep for Friday client meeting',
+  'Follow up on open invoices',
+] as const;
 
 const GLASS = {
   background: 'rgba(255,255,255,0.55)',
@@ -529,75 +535,137 @@ export default function HomePage() {
           </button>
         </div>
       ) : isEmpty ? (
-        <div className="flex flex-col gap-4">
-          <div className="rounded-3xl p-6" style={GLASS}>
-            <div className="flex items-start justify-between mb-1">
-              <h2 className="text-lg font-semibold text-[#222527] tracking-tight">Add Today's Priorities</h2>
-              <div className="flex items-center gap-2 shrink-0 ml-3 mt-0.5">
+        <div className="flex flex-col gap-3">
+
+          {/* ── Main coaching + input card ──────────────────────────────── */}
+          <div className="rounded-3xl px-6 pt-6 pb-5" style={GLASS}>
+
+            {/* Coaching header */}
+            <div className="mb-5">
+              <h2 className="text-base font-semibold text-[#222527] tracking-tight mb-1.5">
+                What needs your attention today?
+              </h2>
+              <p className="text-sm text-[#222527]/52 leading-relaxed">
+                Add 3–5 priorities in plain language — work, life, or admin.
+                We'll score each for urgency and importance, then surface what actually matters.
+              </p>
+            </div>
+
+            {/* Input module — distinct frame, feels functional */}
+            <div
+              className="rounded-xl px-4 pt-3 pb-2.5 mb-4"
+              style={{
+                background: 'rgba(255,255,255,0.65)',
+                border: '1px solid rgba(255,255,255,0.90)',
+                boxShadow: '0 1px 6px rgba(34,37,39,0.05)',
+              }}
+            >
+              <QuickAddInput
+                onAdd={handleQuickAdd}
+                placeholder={`e.g. ${PLACEHOLDER_EXAMPLES[placeholderIdx]}`}
+                className="text-sm"
+                formId="quick-add-main"
+                hideButton
+              />
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-[11px] text-[#222527]/32">
+                  Press Enter to add · 3–5 tasks recommended
+                </p>
                 <button
-                  onClick={handleKeepOpen}
-                  className="flex items-center text-xs font-medium text-[#222527]/60 hover:text-[#222527] transition-colors px-3 py-1.5 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.70)' }}
+                  type="submit"
+                  form="quick-add-main"
+                  className="h-6 w-6 rounded-full flex items-center justify-center transition-all hover:opacity-80 active:scale-95 shrink-0"
+                  style={{ background: 'rgba(34,37,39,0.78)', color: '#fff' }}
                 >
-                  Keep Today Open
-                </button>
-                <button
-                  onClick={() => setShowSuggestModal(true)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-[#222527]/60 hover:text-[#222527] transition-colors px-3 py-1.5 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.70)' }}
-                >
-                  <Sparkles className="h-3 w-3" />
-                  Suggest My Day
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
                 </button>
               </div>
             </div>
-            <QuickAddInput
-              onAdd={handleQuickAdd}
-              placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
-              className="text-sm"
-              formId="quick-add-main"
-              hideButton
-            />
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-[#222527]/35">Write freely. We'll prioritize it for you.</p>
+
+            {/* Example entries — clickable chips */}
+            <div className="mb-6">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/28 mb-2">
+                Try adding
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {EXAMPLE_ENTRIES.map(ex => (
+                  <button
+                    key={ex}
+                    onClick={() => handleQuickAdd(ex)}
+                    className="flex items-center gap-1.5 text-xs text-[#222527]/52 hover:text-[#222527]/80 px-2.5 py-1.5 rounded-lg transition-all hover:scale-[1.02] active:scale-95"
+                    style={{
+                      background: 'rgba(255,255,255,0.52)',
+                      border: '1px solid rgba(255,255,255,0.80)',
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 opacity-40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    {ex}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="mb-5" style={{ borderTop: '1px solid rgba(255,255,255,0.58)' }} />
+
+            {/* Primary CTA — Suggest My Day */}
+            <button
+              onClick={() => setShowSuggestModal(true)}
+              className="w-full h-12 rounded-2xl font-semibold text-sm tracking-wide transition-all hover:opacity-90 active:scale-[0.99] flex items-center justify-center gap-2 mb-2"
+              style={{ background: '#222527', color: '#fff', boxShadow: '0 4px 20px rgba(34,37,39,0.24)' }}
+            >
+              <Sparkles className="h-4 w-4 opacity-75" />
+              Suggest My Day
+            </button>
+            <p className="text-[11px] text-[#222527]/36 text-center mb-5 leading-snug">
+              Answer 3 questions · get a prioritized list, instantly
+            </p>
+
+            {/* Secondary + tertiary actions */}
+            <div className="flex items-center justify-center gap-3">
               <button
-                type="submit"
-                form="quick-add-main"
-                className="h-7 w-7 rounded-full flex items-center justify-center transition-colors shrink-0"
-                style={{ background: 'rgba(34,37,39,0.82)', color: '#fff' }}
+                onClick={() => {
+                  const input = document.querySelector<HTMLInputElement>('[id="quick-add-main"] input, form[id="quick-add-main"] input');
+                  input?.focus();
+                }}
+                className="text-xs font-medium text-[#222527]/45 hover:text-[#222527]/72 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
+                I'll choose manually
+              </button>
+              <span className="text-[#222527]/20">·</span>
+              <button
+                onClick={handleKeepOpen}
+                className="text-xs text-[#222527]/30 hover:text-[#222527]/52 transition-colors"
+              >
+                Nothing planned today
               </button>
             </div>
           </div>
 
-          <div className="rounded-2xl p-5" style={GLASS_SUBTLE}>
-            <p className="text-sm font-medium text-[#222527]/60 mb-1">No priorities selected yet.</p>
-          </div>
-
-          <div className="rounded-2xl p-4 mr-72" style={GLASS_SUBTLE}>
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#222527]/40 mb-3">Today</p>
-            <div className="flex items-end justify-between gap-4">
-              <div className="flex gap-6 text-sm text-[#222527]/60">
-                <div><span className="text-xl font-light text-[#222527]">0</span><br /><span className="text-xs">selected</span></div>
-                <div><span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span><br /><span className="text-xs">carryover</span></div>
-                <div>
-                  <span className="text-xl font-light text-[#222527]">
-                    {state.settings?.reminderTimeLocal
-                      ? (() => {
-                          const [h, m] = state.settings.reminderTimeLocal.split(':').map(Number);
-                          const d = new Date(); d.setHours(h, m);
-                          return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                        })()
-                      : '4:45 PM'}
-                  </span>
-                  <br /><span className="text-xs">check-in</span>
-                </div>
-              </div>
+          {/* Carryover notice — only shown when relevant */}
+          {carryoverPriorities.length > 0 && (
+            <div
+              className="rounded-2xl px-4 py-3 flex items-center gap-3"
+              style={{
+                background: 'rgba(254,226,226,0.45)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(220,38,38,0.18)',
+              }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-red-400/80 shrink-0" />
+              <p className="text-xs text-[#222527]/60 flex-1">
+                <span className="font-semibold text-[#222527]/70">
+                  {carryoverPriorities.length} {carryoverPriorities.length === 1 ? 'item' : 'items'} carrying over
+                </span>
+                {' '}from a previous day — add them above to reprioritize.
+              </p>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         <>
