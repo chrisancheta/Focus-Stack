@@ -41,7 +41,7 @@ export default function WelcomePage() {
           </Link>
         </div>
 
-        <p className="mt-8 text-xs text-[#222527]/35 tracking-wide">
+        <p className="mt-5 text-xs text-[#222527]/35 tracking-wide">
           Local-first · No account required
         </p>
       </div>
