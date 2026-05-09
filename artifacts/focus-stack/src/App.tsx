@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppStoreProvider, useAppStore } from "@/lib/storeContext";
 import { TimerProvider } from "@/lib/timerContext";
+import { WindowModeProvider } from "@/lib/windowMode";
 import { AppShell } from "@/components/layout/AppShell";
 import NotFound from "@/pages/not-found";
 
@@ -28,7 +29,7 @@ function RouteGuard() {
         </Route>
         <Route path="/welcome" component={WelcomePage} />
         <Route path="/setup" component={SetupPage} />
-        
+
         <Route path="/home" component={HomePage} />
         <Route path="/focus" component={FocusPage} />
         <Route path="/trends" component={TrendsPage} />
@@ -46,10 +47,12 @@ function App() {
       <TooltipProvider>
         <AppStoreProvider>
           <TimerProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <RouteGuard />
-            </WouterRouter>
-            <Toaster />
+            <WindowModeProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <RouteGuard />
+              </WouterRouter>
+              <Toaster />
+            </WindowModeProvider>
           </TimerProvider>
         </AppStoreProvider>
       </TooltipProvider>

@@ -6,6 +6,7 @@ import { useAppStore } from '@/lib/storeContext';
 import { useTimer } from '@/lib/timerContext';
 import { getTodayISODate } from '@/lib/utils';
 import type { PriorityCard } from '@/lib/store';
+import { useWindowMode } from '@/lib/windowMode';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 
@@ -31,6 +32,10 @@ const QUICK_LABELS = ['Deep work', 'Study block', 'Reading', 'Planning', 'Admin'
 export default function FocusPage() {
   const { state }      = useAppStore();
   const { linkedPriorityId, linkPriority, isRunning, isDone, toggle, reset, timeLeft, duration } = useTimer();
+  const { mode, setMode } = useWindowMode();
+
+  // Set active mode when this page mounts
+  useEffect(() => { setMode('active'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Standalone session identity
   const [sessionName,    setSessionName]    = useState('');
@@ -108,6 +113,49 @@ export default function FocusPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
+  // ── Mini mode: compact timer + essential controls ────────────────────────────
+  if (mode === 'mini') {
+    return (
+      <div className="flex flex-col items-center gap-3 py-2">
+        <div style={{ transform: 'scale(0.80)', transformOrigin: 'center', marginTop: '-34px', marginBottom: '-34px' }}>
+          <FocusTimerWidget miniMode />
+        </div>
+        {isDone ? (
+          <button
+            onClick={reset}
+            className="w-full h-11 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+            style={{ background: 'rgba(107,143,110,0.14)', color: '#5a7d5d', border: '1px solid rgba(107,143,110,0.26)' }}
+          >
+            Session complete
+          </button>
+        ) : (
+          <button
+            onClick={toggle}
+            className="w-full h-11 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              background: isRunning ? 'rgba(255,255,255,0.60)' : '#222527',
+              color:      isRunning ? 'rgba(34,37,39,0.65)'    : '#fff',
+              border:     isRunning ? '1px solid rgba(255,255,255,0.80)' : 'none',
+              boxShadow:  isRunning ? 'none' : '0 4px 16px rgba(34,37,39,0.20)',
+            }}
+          >
+            {isRunning
+              ? <><Pause className="h-4 w-4" /> Pause</>
+              : <><Play  className="h-4 w-4" /> Resume</>
+            }
+          </button>
+        )}
+        <button
+          onClick={() => setMode('active')}
+          className="text-[11px] hover:opacity-75 transition-opacity"
+          style={{ color: 'rgba(34,37,39,0.36)' }}
+        >
+          ↗ Expand to full Pomodoro
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-3 pb-8 max-w-md mx-auto w-full">
 
@@ -138,18 +186,27 @@ export default function FocusPage() {
             </span>
           )}
         </div>
-        {!isDone && (
-          <div
-            className="flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium"
-            style={{ background: 'rgba(255,255,255,0.42)', border: '1px solid rgba(255,255,255,0.60)', color: 'rgba(34,37,39,0.50)' }}
+        <div className="flex items-center gap-1.5">
+          {!isDone && (
+            <div
+              className="flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium"
+              style={{ background: 'rgba(255,255,255,0.42)', border: '1px solid rgba(255,255,255,0.60)', color: 'rgba(34,37,39,0.50)' }}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full inline-block"
+                style={{ background: positionInSet === 3 ? '#6B8F6E' : 'rgba(34,37,39,0.28)' }}
+              />
+              Next: {nextBreakType}
+            </div>
+          )}
+          <button
+            onClick={() => setMode('mini')}
+            className="h-6 px-2.5 rounded-full text-[10px] font-medium transition-all hover:opacity-75"
+            style={{ background: 'rgba(34,37,39,0.06)', color: 'rgba(34,37,39,0.34)', border: '1px solid rgba(34,37,39,0.08)' }}
           >
-            <span
-              className="h-1.5 w-1.5 rounded-full inline-block"
-              style={{ background: positionInSet === 3 ? '#6B8F6E' : 'rgba(34,37,39,0.28)' }}
-            />
-            Next: {nextBreakType}
-          </div>
-        )}
+            Mini
+          </button>
+        </div>
       </div>
 
       {/* ── Timer widget ───────────────────────────────────────────────── */}

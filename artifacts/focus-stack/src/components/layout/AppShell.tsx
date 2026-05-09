@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { useAppStore } from '@/lib/storeContext';
 import { CheckInModal } from '@/components/shared/CheckInModal';
 import { getTodayISODate } from '@/lib/utils';
+import { useWindowMode, WindowMode } from '@/lib/windowMode';
 
 type Action = 'done' | 'carryover' | 'drop' | null;
 
@@ -39,7 +40,6 @@ function CheckInTrigger() {
 
   const handleSave = (updates: { id: string; action: Action }[]) => {
     const newCompletedIds: string[] = [];
-
     updates.forEach(({ id, action }) => {
       if (action === 'done') {
         updatePriority(id, { status: 'completed', progressPercent: 100, isCarryover: false });
@@ -50,11 +50,8 @@ function CheckInTrigger() {
         updatePriority(id, { status: 'dropped', isCarryover: false });
       }
     });
-
     if (todayPlan) {
-      const merged = Array.from(
-        new Set([...todayPlan.completedPriorityIds, ...newCompletedIds])
-      );
+      const merged = Array.from(new Set([...todayPlan.completedPriorityIds, ...newCompletedIds]));
       updateDayPlan(todayPlan.id, {
         checkInCompleted: true,
         checkInCompletedAt: new Date().toISOString(),
@@ -73,20 +70,111 @@ function CheckInTrigger() {
   );
 }
 
-// Exported so HomePage can open the modal manually
 export { CheckInTrigger };
+
+const PANEL_WIDTHS: Record<WindowMode, number> = {
+  mini:     296,
+  active:   376,
+  planning: 456,
+  expanded: 560,
+};
+
+const DESKTOP_BG =
+  'linear-gradient(148deg, #c2cfc4 0%, #b5c5b8 30%, #abc0ae 60%, #a4baa6 100%)';
+
+const PANEL_BG =
+  'linear-gradient(168deg, #ECF1EC 0%, #E5EDE6 55%, #E1EAE2 100%)';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
+  const { mode } = useWindowMode();
+
   const hideNav = location === '/welcome' || location === '/setup';
 
-  return (
-    <div className="min-h-[100dvh] flex flex-col font-sans" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      {!hideNav && <TopNav />}
-      {!hideNav && <CheckInTrigger />}
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
+  const effectiveMode: WindowMode =
+    location === '/trends' || location === '/settings' ? 'expanded' : mode;
+
+  const panelWidth = PANEL_WIDTHS[effectiveMode];
+
+  if (hideNav) {
+    return (
+      <div
+        style={{
+          minHeight: '100dvh',
+          background: DESKTOP_BG,
+          fontFamily: "'DM Sans', sans-serif",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         {children}
-      </main>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: DESKTOP_BG,
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      {/* Floating companion panel */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 22,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: panelWidth,
+          maxHeight: 'calc(100dvh - 44px)',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'width 0.30s cubic-bezier(0.22, 1, 0.36, 1)',
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            borderRadius: 20,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            background: PANEL_BG,
+            border: '1px solid rgba(255,255,255,0.80)',
+            boxShadow:
+              '0 28px 64px rgba(34,37,39,0.22), 0 8px 20px rgba(34,37,39,0.10), 0 2px 6px rgba(34,37,39,0.06), inset 0 1px 0 rgba(255,255,255,0.65)',
+            maxHeight: '100%',
+          }}
+        >
+          {effectiveMode !== 'mini' && <TopNav effectiveMode={effectiveMode} />}
+
+          <div
+            style={{
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              flex: 1,
+              minHeight: 0,
+            }}
+          >
+            <div
+              style={{
+                padding: effectiveMode === 'mini'
+                  ? '14px 12px 18px'
+                  : effectiveMode === 'active'
+                    ? '14px 13px 18px'
+                    : '16px 14px 22px',
+              }}
+            >
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <CheckInTrigger />
     </div>
   );
 }

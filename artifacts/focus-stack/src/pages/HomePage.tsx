@@ -14,6 +14,7 @@ import { generateId, getTodayISODate } from '@/lib/utils';
 import { DayPlan } from '@/lib/store';
 import { findSimilar } from '@/lib/similarity';
 import type { SimilarMatch } from '@/lib/similarity';
+import { useWindowMode } from '@/lib/windowMode';
 
 const PLACEHOLDER_EXAMPLES = [
   'Finish the project proposal before Friday',
@@ -90,8 +91,8 @@ export default function HomePage() {
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
-  const [isMiniMode, setIsMiniMode] = useState(false);
   const [justCompleted, setJustCompleted] = useState<string | null>(null);
+  const { setMode } = useWindowMode();
   const [autoStartPomodoro, setAutoStartPomodoro] = useState(true);
   const [pendingAdd, setPendingAdd] = useState<{ title: string; match: SimilarMatch } | null>(null);
   const [showAllTasks, setShowAllTasks] = useState(false);
@@ -356,11 +357,12 @@ export default function HomePage() {
       linkPriority(topPriority.id);
       if (autoStartPomodoro && !isRunning) toggle();
     }
+    setMode('active');
     setFocusMode(true);
     setShowAllTasks(false);
   };
 
-  const handleExitFocusMode = () => { setFocusMode(false); setIsMiniMode(false); setJustCompleted(null); };
+  const handleExitFocusMode = () => { setMode('planning'); setFocusMode(false); setJustCompleted(null); };
 
   const handleClearCompleted = () => {
     if (!todayPlan) return;
@@ -477,106 +479,8 @@ export default function HomePage() {
         : 'rgba(34,37,39,0.26)';
     const progressGlow = timerState === 'running' ? '0 1px 6px rgba(90,125,93,0.32)' : 'none';
 
-    const MINI_STYLE = {
-      background: 'rgba(255,255,255,0.92)',
-      backdropFilter: 'blur(28px)',
-      WebkitBackdropFilter: 'blur(28px)',
-      border: '1.5px solid rgba(255,255,255,0.97)',
-      boxShadow: '0 16px 48px rgba(34,37,39,0.18), 0 4px 16px rgba(34,37,39,0.08)',
-    };
-
     return (
       <>
-        {/* ── Mini floating widget ──────────────────────────────────────────── */}
-        {isMiniMode && (
-          <div className="fixed bottom-6 right-6 z-50 w-[268px] rounded-2xl overflow-hidden" style={MINI_STYLE}>
-            <div className="flex items-center justify-between px-3.5 py-2.5" style={{ borderBottom: '1px solid rgba(34,37,39,0.06)' }}>
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dotColor, boxShadow: dotGlow }} />
-                <span className="text-[9px] font-bold uppercase tracking-widest text-[#222527]/45">{modeLabel}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setIsMiniMode(false)}
-                  className="h-6 px-2 rounded-full text-[10px] font-medium flex items-center gap-1 transition-all hover:opacity-80"
-                  style={{ background: 'rgba(34,37,39,0.07)', color: 'rgba(34,37,39,0.48)', border: '1px solid rgba(34,37,39,0.09)' }}
-                >
-                  ↗ Expand
-                </button>
-                <button
-                  onClick={handleExitFocusMode}
-                  className="h-6 w-6 rounded-full flex items-center justify-center text-[#222527]/32 hover:text-[#222527]/60 transition-colors"
-                  style={{ background: 'rgba(34,37,39,0.05)' }}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
-
-            <div className="px-3.5 pt-3 pb-2">
-              <p className="text-[13px] font-semibold text-[#222527] leading-snug line-clamp-2 mb-1.5">
-                {topPriority.title}
-              </p>
-              {topPriority.recommendationLabel && <RecommendationChip label={topPriority.recommendationLabel} />}
-            </div>
-
-            <div className="px-3.5 pb-3">
-              <div className="flex items-center justify-between mb-2">
-                <span
-                  className="font-thin text-[#222527] tabular-nums"
-                  style={{ fontSize: '26px', lineHeight: 1, opacity: timerState === 'paused' ? 0.42 : 1, transition: 'opacity 0.3s' }}
-                >
-                  {isDone ? '—' : formatTime(timeLeft)}
-                </span>
-                {!isDone && (
-                  <button
-                    onClick={toggle}
-                    className="h-7 px-2.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all hover:opacity-85 active:scale-95"
-                    style={isRunning
-                      ? { background: 'rgba(255,255,255,0.82)', color: 'rgba(34,37,39,0.62)', border: '1px solid rgba(34,37,39,0.12)' }
-                      : { background: '#222527', color: '#fff', boxShadow: '0 2px 6px rgba(34,37,39,0.18)' }}
-                  >
-                    {isRunning ? <><Pause className="h-2.5 w-2.5" />Pause</> : <><Play className="h-2.5 w-2.5" />Resume</>}
-                  </button>
-                )}
-              </div>
-              <div className="h-[4px] rounded-full overflow-hidden mb-3" style={{ background: 'rgba(34,37,39,0.08)' }}>
-                <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${timerProgress}%`, background: progressFill, boxShadow: progressGlow }} />
-              </div>
-              {justCompleted ? (
-                <div className="h-9 rounded-xl flex items-center justify-center gap-1.5 text-xs font-semibold" style={{ background: 'rgba(107,143,110,0.18)', color: '#2a4e2d', border: '1px solid rgba(107,143,110,0.30)' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span className="truncate">{justCompleted}</span>
-                </div>
-              ) : (
-                <button
-                  onClick={handleDoneWithFlash}
-                  className="w-full h-9 rounded-xl text-xs font-semibold transition-all hover:opacity-85 active:scale-[0.98]"
-                  style={{ background: 'rgba(34,37,39,0.88)', color: '#fff', boxShadow: '0 2px 8px rgba(34,37,39,0.16)' }}
-                >
-                  ✓ Mark Done
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── Main content area ─────────────────────────────────────────────── */}
-        {isMiniMode ? (
-          <div className="rounded-2xl p-5 text-center" style={GLASS_SUBTLE}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: dotColor, boxShadow: dotGlow }} />
-              <span className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/40">{modeLabel}</span>
-            </div>
-            <p className="text-xs text-[#222527]/30 mb-3">Companion is floating · bottom right</p>
-            <button
-              onClick={() => setIsMiniMode(false)}
-              className="text-xs font-medium text-[#222527]/46 hover:text-[#222527]/70 transition-colors"
-            >
-              ↗ Expand companion
-            </button>
-          </div>
-        ) : (
           <div className="space-y-3">
             {dedupBanner}
 
@@ -590,18 +494,6 @@ export default function HomePage() {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/45">{modeLabel}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setIsMiniMode(true)}
-                    title="Float as mini widget"
-                    className="h-7 px-2.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 transition-all hover:opacity-80"
-                    style={{ background: 'rgba(34,37,39,0.07)', color: 'rgba(34,37,39,0.50)', border: '1px solid rgba(34,37,39,0.09)' }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
-                      <line x1="10" y1="14" x2="21" y2="3"/><line x1="3" y1="21" x2="14" y2="10"/>
-                    </svg>
-                    Float
-                  </button>
                   <button
                     onClick={() => setLocation('/focus')}
                     className="flex items-center gap-1 h-7 px-2.5 rounded-full text-[11px] font-medium transition-all hover:opacity-80"
@@ -854,7 +746,6 @@ export default function HomePage() {
               )}
             </div>
           </div>
-        )}
 
         {modals}
       </>
