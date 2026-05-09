@@ -113,7 +113,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const hideNav = location === '/welcome' || location === '/setup';
 
   const effectiveMode: WindowMode =
-    location === '/trends' || location === '/settings' ? 'expanded' : mode;
+    mode === 'mini' ? 'mini' :
+    (location === '/trends' || location === '/settings' || location === '/home') ? 'expanded' :
+    mode;
 
   const panelWidth = PANEL_WIDTHS[effectiveMode];
 
