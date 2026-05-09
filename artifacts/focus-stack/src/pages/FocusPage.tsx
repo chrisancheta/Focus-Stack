@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Link2, Coffee, Zap, RotateCcw, Play, Pause, ChevronDown } from 'lucide-react';
+import { X, Link2, Coffee, Zap, RotateCcw, Play, Pause } from 'lucide-react';
 import { FocusTimerWidget } from '@/components/shared/FocusTimerWidget';
 import { RecommendationChip } from '@/components/priority/RecommendationChip';
 import { useAppStore } from '@/lib/storeContext';
@@ -186,27 +186,18 @@ export default function FocusPage() {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
-          {!isDone && (
-            <div
-              className="flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium"
-              style={{ background: 'rgba(255,255,255,0.42)', border: '1px solid rgba(255,255,255,0.60)', color: 'rgba(34,37,39,0.50)' }}
-            >
-              <span
-                className="h-1.5 w-1.5 rounded-full inline-block"
-                style={{ background: positionInSet === 3 ? '#6B8F6E' : 'rgba(34,37,39,0.28)' }}
-              />
-              Next: {nextBreakType}
-            </div>
-          )}
-          <button
-            onClick={() => setMode('mini')}
-            className="h-6 px-2.5 rounded-full text-[10px] font-medium transition-all hover:opacity-75"
-            style={{ background: 'rgba(34,37,39,0.06)', color: 'rgba(34,37,39,0.34)', border: '1px solid rgba(34,37,39,0.08)' }}
+        {!isDone && (
+          <div
+            className="flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-medium"
+            style={{ background: 'rgba(255,255,255,0.42)', border: '1px solid rgba(255,255,255,0.60)', color: 'rgba(34,37,39,0.50)' }}
           >
-            Mini
-          </button>
-        </div>
+            <span
+              className="h-1.5 w-1.5 rounded-full inline-block"
+              style={{ background: positionInSet === 3 ? '#6B8F6E' : 'rgba(34,37,39,0.28)' }}
+            />
+            Next: {nextBreakType}
+          </div>
+        )}
       </div>
 
       {/* ── Timer widget ───────────────────────────────────────────────── */}
