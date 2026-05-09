@@ -550,36 +550,6 @@ export default function FocusPage() {
         </div>
       )}
 
-      {/* ── Stats strip ────────────────────────────────────────────────── */}
-      <div className="w-full grid grid-cols-3 gap-2">
-        {[
-          {
-            value: totalFocusedMins > 0 ? `${totalFocusedMins}m` : '—',
-            label: 'Focused today',
-            sub:   completedCount > 0
-              ? `${completedCount} session${completedCount !== 1 ? 's' : ''}`
-              : 'First session',
-          },
-          {
-            value: totalInPlan > 0 ? `${doneCount}/${totalInPlan}` : '—',
-            label: 'Tasks done',
-            sub:   todayPlan
-              ? (doneCount === totalInPlan && totalInPlan > 0 ? 'Day complete!' : `${totalInPlan - doneCount} remaining`)
-              : 'No plan today',
-          },
-          {
-            value: completedSets > 0 ? String(completedSets) : '—',
-            label: 'Full sets',
-            sub:   completedSets > 0 ? `${completedSets * setSize} sessions` : 'Complete 4',
-          },
-        ].map(({ value, label, sub }) => (
-          <div key={label} className="rounded-xl px-3 py-2.5 text-center" style={GLASS_SUBTLE}>
-            <p className="text-lg font-light text-[#222527]">{value}</p>
-            <p className="text-[10px] text-[#222527]/45 mt-0.5 leading-tight">{label}</p>
-            <p className="text-[9px] text-[#222527]/30 mt-0.5 leading-tight">{sub}</p>
-          </div>
-        ))}
-      </div>
 
       {/* ── Session history ────────────────────────────────────────────── */}
       {todaySessions.length > 0 && (

@@ -674,11 +674,10 @@ export default function HomePage() {
 
               <div className="mb-5">
                 <h2 className="text-base font-semibold text-[#222527] tracking-tight mb-1.5">
-                  What needs your attention today?
+                  Start your day with clarity
                 </h2>
                 <p className="text-sm text-[#222527]/52 leading-relaxed">
-                  Add 3–5 priorities in plain language — work, life, or admin.
-                  We'll score each for urgency and importance, then surface what actually matters.
+                  Add what's on your plate. We'll rank it by urgency and importance so you always know what to do first.
                 </p>
               </div>
 
@@ -821,68 +820,27 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Carryover items */}
-            {carryoverPriorities.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500/75" />
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/65">
-                    Needs Attention
-                  </h3>
-                </div>
-                {carryoverPriorities.map(p => (
+            {/* Ranked priorities — single source of truth */}
+            <div className="space-y-2">
+              {(() => {
+                const activeForRank = selectedPriorities.filter(p => p.status !== 'completed');
+                const rankMap = new Map(activeForRank.slice(0, 3).map((p, i) => [p.id, i + 1]));
+                return selectedPriorities.map(p => (
                   <PriorityCard
                     key={p.id}
                     priority={p}
+                    rank={rankMap.get(p.id)}
                     onClick={() => setSelectedPriorityId(p.id)}
                     onComplete={() => handleComplete(p.id)}
+                    onMoveUp={() => handleMoveUp(p.id)}
+                    onMoveDown={() => handleMoveDown(p.id)}
                     onStartFocus={() => handleStartFocus(p.id)}
-                    onDismiss={() => dismissCarryover(p.id)}
+                    onNoteChange={note => updatePriority(p.id, { notes: note })}
+                    onDismiss={p.isCarryover && p.status !== 'completed' ? () => dismissCarryover(p.id) : undefined}
+                    showMoveControls
                   />
-                ))}
-              </div>
-            )}
-
-            {/* Planning mode header + ranked priorities */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1 h-1 rounded-full bg-[#222527]/22 shrink-0" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/50">
-                      Planning
-                    </h3>
-                  </div>
-                  <span
-                    className="text-[11px] font-bold px-2 py-0.5 rounded-full text-[#222527]/65"
-                    style={{ background: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.75)' }}
-                  >
-                    {selectedPriorities.length}
-                  </span>
-                </div>
-                <span className="text-[11px] text-[#222527]/40">Recommended: 3–5</span>
-              </div>
-
-              <div className="space-y-2">
-                {(() => {
-                  const activeForRank = selectedPriorities.filter(p => p.status !== 'completed');
-                  const rankMap = new Map(activeForRank.slice(0, 3).map((p, i) => [p.id, i + 1]));
-                  return selectedPriorities.map(p => (
-                    <PriorityCard
-                      key={p.id}
-                      priority={p}
-                      rank={rankMap.get(p.id)}
-                      onClick={() => setSelectedPriorityId(p.id)}
-                      onComplete={() => handleComplete(p.id)}
-                      onMoveUp={() => handleMoveUp(p.id)}
-                      onMoveDown={() => handleMoveDown(p.id)}
-                      onStartFocus={() => handleStartFocus(p.id)}
-                      onNoteChange={note => updatePriority(p.id, { notes: note })}
-                      showMoveControls
-                    />
-                  ));
-                })()}
-              </div>
+                ));
+              })()}
             </div>
 
             {/* Start My Day CTA */}
@@ -944,43 +902,27 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Stats panel */}
-            <div className="rounded-2xl p-4" style={GLASS_SUBTLE}>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#222527]/50 mb-3">Today</p>
-              <div className="flex items-end justify-between gap-4">
-                <div className="flex gap-6 text-sm">
-                  <div>
-                    <span className="text-xl font-light text-[#222527]">{selectedPriorities.length}</span>
-                    <br /><span className="text-xs text-[#222527]/60">selected</span>
-                  </div>
-                  <div>
-                    <span className="text-xl font-light text-[#222527]">{carryoverPriorities.length}</span>
-                    <br /><span className="text-xs text-[#222527]/60">carryover</span>
-                  </div>
-                  <div>
-                    <span className="text-xl font-light text-[#222527]">{checkInTimeStr}</span>
-                    <br /><span className="text-xs text-[#222527]/60">check-in</span>
-                  </div>
-                </div>
-                {todayPlan && (
-                  <button
-                    onClick={() => setShowCheckIn(true)}
-                    className="shrink-0 h-9 px-4 rounded-full text-xs font-semibold transition-all hover:opacity-85"
-                    style={{
-                      background: todayPlan.checkInCompleted
-                        ? 'rgba(107,143,110,0.15)'
-                        : 'rgba(107,143,110,0.18)',
-                      color: todayPlan.checkInCompleted ? '#5a7d5d' : '#2a4e2d',
-                      border: todayPlan.checkInCompleted
-                        ? '1px solid rgba(107,143,110,0.30)'
-                        : '1px solid rgba(107,143,110,0.35)',
-                    }}
-                  >
-                    {todayPlan.checkInCompleted ? '✓ Checked in' : 'EOD Check In'}
-                  </button>
-                )}
+            {/* Footer row — check-in + task count */}
+            {todayPlan && (
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[11px] text-[#222527]/34">
+                  {completedPriorities.length > 0
+                    ? `${completedPriorities.length} done · ${activePriorities.length} left · check-in ${checkInTimeStr}`
+                    : `${activePriorities.length} tasks · check-in ${checkInTimeStr}`}
+                </p>
+                <button
+                  onClick={() => setShowCheckIn(true)}
+                  className="text-[11px] font-medium px-2.5 py-1 rounded-full transition-all hover:opacity-80"
+                  style={{
+                    background: todayPlan.checkInCompleted ? 'rgba(107,143,110,0.14)' : 'rgba(34,37,39,0.07)',
+                    color: todayPlan.checkInCompleted ? '#5a7d5d' : 'rgba(34,37,39,0.46)',
+                    border: todayPlan.checkInCompleted ? '1px solid rgba(107,143,110,0.25)' : '1px solid rgba(34,37,39,0.09)',
+                  }}
+                >
+                  {todayPlan.checkInCompleted ? '✓ Checked in' : 'Check In'}
+                </button>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>

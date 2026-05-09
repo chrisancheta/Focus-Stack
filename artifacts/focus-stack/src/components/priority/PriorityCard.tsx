@@ -365,15 +365,6 @@ export function PriorityCard({
               {priority.title}
             </h4>
 
-            {/* ── One-line rationale — always visible for meaningful reasons ── */}
-            {!isCompleted && priority.recommendationReason && priority.recommendationReason !== 'Added just now' && (
-              <p
-                className="text-xs mt-1.5 leading-snug"
-                style={{ color: isRankOne ? 'rgba(34,37,39,0.60)' : 'rgba(34,37,39,0.50)' }}
-              >
-                {priority.recommendationReason}
-              </p>
-            )}
 
             {/* ── Meta row — duration + due date only ───────────── */}
             {(priority.estimatedMinutes || priority.dueDate) && (
@@ -498,6 +489,9 @@ export function PriorityCard({
             style={{ borderTop: '1px solid rgba(255,255,255,0.45)' }}
             onClick={e => e.stopPropagation()}
           >
+            {priority.recommendationReason && priority.recommendationReason !== 'Added just now' && (
+              <p className="text-xs text-[#222527]/58 leading-snug">{priority.recommendationReason}</p>
+            )}
             {/* Bucket + quadrant classification */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <BucketBadge bucket={priority.bucket} />
