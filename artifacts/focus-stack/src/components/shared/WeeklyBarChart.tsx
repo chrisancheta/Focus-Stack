@@ -26,24 +26,19 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   const completed = payload.find((p: any) => p.dataKey === 'completed')?.value ?? 0;
   const pct       = planned > 0 ? Math.round((completed / planned) * 100) : 0;
 
+  const pctColor = pct >= 80 ? '#2a4e2d' : pct >= 50 ? '#7a5000' : 'rgba(150,35,35,0.80)';
   return (
     <div
-      className="px-3 py-2.5 rounded-xl text-xs space-y-1"
+      className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg"
       style={{
-        background: 'rgba(255,255,255,0.96)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255,255,255,0.80)',
-        boxShadow: '0 4px 16px rgba(34,37,39,0.12)',
+        background: 'rgba(255,255,255,0.97)',
+        border: '1px solid rgba(34,37,39,0.10)',
+        boxShadow: '0 2px 8px rgba(34,37,39,0.09)',
       }}
     >
-      <p className="font-semibold text-[#222527] mb-1.5">{label}</p>
-      <p className="text-[#222527]/70">
-        <span className="font-semibold text-[#222527]">{completed}</span>
-        <span className="text-[#222527]/50"> / {planned} done</span>
-      </p>
-      <p style={{ color: pct >= 80 ? '#2a4e2d' : pct >= 50 ? '#6b4800' : 'rgba(150,35,35,0.80)' }} className="font-semibold">
-        {pct}%
-      </p>
+      <span className="text-[11px] font-bold text-[#222527]">{label}</span>
+      <span className="text-[11px] text-[#222527]/55">{completed}/{planned}</span>
+      <span className="text-[11px] font-semibold" style={{ color: pctColor }}>{pct}%</span>
     </div>
   );
 };

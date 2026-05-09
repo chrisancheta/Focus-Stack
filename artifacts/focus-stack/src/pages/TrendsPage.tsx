@@ -156,9 +156,9 @@ function buildRecommendations(data: {
   if (avgDailyLoad > 5.5 || highLoadDays >= 2) {
     recs.push({
       id: 'overplanning', IconComp: Layers,
-      title: `You're likely overplanning (${avgDailyLoad.toFixed(1)} tasks/day avg)`,
-      body: `Days over 5 priorities end in carryover. The bar chart shows planned vs done gaps on heavy days.`,
-      action: `Cap each day at 5. Move extras to "Could do" and promote only when you finish early.`,
+      title: `Cut the list — ${avgDailyLoad.toFixed(1)} tasks/day is too many`,
+      body: `Heavy days end in carryover, not completion. The gap between bars shows exactly where this hurts.`,
+      action: `Max 5 per day. Move the rest to "Could do" and only promote when you finish early.`,
       severity: 'warning',
     });
   }
@@ -167,17 +167,17 @@ function buildRecommendations(data: {
   if (carryoverCount >= 3 && completionPct < 70) {
     recs.push({
       id: 'carryover', IconComp: RotateCcw,
-      title: `Carryover is stacking (${carryoverCount} items)`,
-      body: `Below 70% completion means deferred tasks pile up rather than get resolved.`,
-      action: `Before Monday: for each carryover — do it, reschedule with a real date, or drop it.`,
+      title: `Stop adding. Clear ${carryoverCount} carryovers first.`,
+      body: `Below 70% means tasks pile up faster than you resolve them. Adding more makes this worse.`,
+      action: `For each carryover: do it now, set a real date, or drop it. Don't carry it again.`,
       severity: 'warning',
     });
   } else if (carryoverCount >= 1 && completionPct < 60) {
     recs.push({
       id: 'carryover-mild', IconComp: RotateCcw,
-      title: `Items carrying over (${completionPct}% completion)`,
-      body: `${carryoverCount} task${carryoverCount > 1 ? 's' : ''} deferred with below-average completion. Don't add more until these are cleared.`,
-      action: `Clear or drop carryover before adding anything new next week.`,
+      title: `Clear carryover first — ${completionPct}% rate`,
+      body: `${carryoverCount} task${carryoverCount > 1 ? 's' : ''} deferred at below-average completion. Don't add more until these are handled.`,
+      action: `Each carryover: do it, set a concrete date, or drop it. This week, not "later."`,
       severity: 'info',
     });
   }
@@ -186,9 +186,9 @@ function buildRecommendations(data: {
   if (unplannedActiveDays >= 2) {
     recs.push({
       id: 'unplanned', IconComp: CalendarX,
-      title: `${unplannedActiveDays} active days passed without a plan`,
-      body: `Unplanned days mean invisible output. If you worked but didn't track, your metrics undercount reality.`,
-      action: `Open Focus Stack each morning. Pick 1–3 priorities before you start work.`,
+      title: `${unplannedActiveDays} days with no plan`,
+      body: `Unplanned days mean invisible output — you may have worked, but nothing tracked here.`,
+      action: `Open Focus Stack before starting work. Name 1–3 priorities first, every day.`,
       severity: 'info',
     });
   }
@@ -197,9 +197,9 @@ function buildRecommendations(data: {
   if (totalPlanned > 0 && avgDailyLoad < 2.5 && completionPct >= 80) {
     recs.push({
       id: 'undercapacity', IconComp: TrendingUp,
-      title: `You have capacity — ${completionPct}% on only ${avgDailyLoad.toFixed(1)} tasks/day`,
-      body: `Consistently hitting a light list means you're leaving higher-value work undone.`,
-      action: `Add 1–2 harder tasks next week. You have the capacity.`,
+      title: `You have headroom — raise the bar`,
+      body: `${completionPct}% on ${avgDailyLoad.toFixed(1)} tasks/day means higher-value work is sitting undone.`,
+      action: `Add 1–2 harder tasks next week. You're completing everything — use that.`,
       severity: 'positive',
     });
   }
@@ -208,9 +208,9 @@ function buildRecommendations(data: {
   if (completionPct < 50 && avgDailyLoad <= 5 && totalPlanned >= 5 && carryoverCount < 3) {
     recs.push({
       id: 'low-completion', IconComp: Activity,
-      title: `Below 50% completion — not an overplanning problem`,
-      body: `You planned ${totalPlanned} tasks and finished ${totalCompleted}. The list size looks fine — the gap is a momentum or focus issue.`,
-      action: `Name your #1 task each morning. Complete it before anything else.`,
+      title: `Momentum problem — ${completionPct}% on a reasonable list`,
+      body: `${totalPlanned} planned, ${totalCompleted} done. List size isn't the issue — execution is.`,
+      action: `Name your #1 task first thing. Finish it before you open anything else.`,
       severity: 'warning',
     });
   }
@@ -219,9 +219,9 @@ function buildRecommendations(data: {
   if (completionPct >= 80 && focusedDays >= 3 && carryoverCount <= 1) {
     recs.push({
       id: 'great-week', IconComp: CheckCircle2,
-      title: `Strong week — ${completionPct}% with ${focusedDays} focused days`,
-      body: `Well-calibrated week: enough tasks without overloading. Planning matched execution.`,
-      action: `Keep the same daily load next week. Use this week as your benchmark.`,
+      title: `Repeat this — ${completionPct}%, ${focusedDays} days in range`,
+      body: `Planning matched execution this week. This is your calibration point.`,
+      action: `Keep the same daily load. Use this week as your benchmark.`,
       severity: 'positive',
     });
   }
@@ -230,9 +230,9 @@ function buildRecommendations(data: {
   if (recs.length === 0 && (totalPlanned > 0 || streak > 0)) {
     recs.push({
       id: 'default', IconComp: Target,
-      title: 'Commit to your top task first thing',
-      body: `Picking 3–5 priorities and completing the top one first is the highest-ROI habit. A focused session beats a reactive day.`,
-      action: 'Tomorrow: name your #1 before opening any messages. Protect the first hour for it.',
+      title: 'Commit to your top task first',
+      body: `Pick 3–5 priorities, then clear the top one before anything else. That habit compounds faster than any other.`,
+      action: 'Tomorrow: name your #1 before opening any messages. Protect the first hour.',
       severity: 'info',
     });
   }
@@ -314,7 +314,7 @@ function CoachingCard({ rec }: { rec: Recommendation }) {
               </p>
             </div>
           )}
-          <p className="text-[11px] text-[#222527]/52 leading-relaxed">{rec.body}</p>
+          <p className="text-[11px] text-[#222527]/52 leading-snug">{rec.body}</p>
         </div>
       </div>
     </div>
@@ -453,8 +453,8 @@ export default function TrendsPage() {
   const todayModeLabel =
     !todayPlan2 || todayTotalCount === 0 ? 'No plan today' :
     todayDoneCount === todayTotalCount    ? 'Day complete' :
-    todayDoneCount > 0                   ? 'Active day' :
-    'Planning';
+    todayDoneCount > 0                   ? 'In focus' :
+    'Not started';
 
   const todayModeDot =
     todayDoneCount === todayTotalCount && todayTotalCount > 0 ? '#5a7d5d' :
@@ -540,7 +540,7 @@ export default function TrendsPage() {
         <KpiTile
           label="Completion"
           value={totalPlanned > 0 ? `${completionPct}%` : '—'}
-          sub={totalPlanned > 0 ? `${totalCompleted} of ${totalPlanned} done` : 'No plan yet'}
+          sub={totalPlanned > 0 ? `${totalCompleted} of ${totalPlanned}` : 'No plan yet'}
           accent={completionAccent}
         />
         <KpiTile
@@ -553,7 +553,7 @@ export default function TrendsPage() {
         <KpiTile
           label="Well-scoped"
           value={focusedDays}
-          sub="Days with 3–5 tasks"
+          sub="Days in range"
           accent={focusedDays >= 3 ? 'positive' : 'neutral'}
         />
         <KpiTile
