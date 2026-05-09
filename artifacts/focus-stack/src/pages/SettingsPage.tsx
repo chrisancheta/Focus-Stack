@@ -263,9 +263,9 @@ export default function SettingsPage() {
   const iw = s.importanceWeight;
   const uw = s.urgencyWeight;
   const engineSummary =
-    Math.abs(iw - uw) < 0.08 ? 'Balanced'
-    : iw > uw ? `Importance ${Math.round(iw * 100)}%`
-    : `Urgency ${Math.round(uw * 100)}%`;
+    Math.abs(iw - uw) < 0.08
+      ? 'Balanced'
+      : `${Math.round(iw * 100)} / ${Math.round(uw * 100)} split`;
 
   const planSummary    = `${activeDays.length}d/wk · ${fmtTime(s.reminderTimeLocal)}`;
   const timerSummary   = `${s.defaultFocusMinutes} min`;
@@ -279,7 +279,6 @@ export default function SettingsPage() {
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <div className="px-1 pb-1">
         <h2 className="text-base font-semibold text-[#222527] tracking-tight">Settings</h2>
-        <p className="text-[11px] text-[#222527]/42 mt-0.5">Saves instantly · stays on this device</p>
       </div>
 
       {/* ── 1. Prioritization Engine ─────────────────────────────────────── */}
@@ -430,7 +429,7 @@ export default function SettingsPage() {
             </Select>
           </Row>
 
-          <Row label="Carry over incomplete" hint="Move unfinished tasks to tomorrow">
+          <Row label="Carry over unfinished items" hint="Move to tomorrow automatically">
             <Switch
               checked={s.carryoverEnabled}
               onCheckedChange={v => set('carryoverEnabled', v)}
@@ -438,7 +437,7 @@ export default function SettingsPage() {
             />
           </Row>
 
-          <Row label="Daily recurring prompt" hint="Ask each morning about recurring tasks">
+          <Row label="Ask about recurring tasks" hint="Prompted at the start of each day">
             <Switch
               checked={s.recurringPromptEnabled}
               onCheckedChange={v => set('recurringPromptEnabled', v)}
@@ -489,7 +488,7 @@ export default function SettingsPage() {
         onToggle={() => toggleSection('calendar')}
       >
         <div className="mt-1">
-          <Row label="Calendar import" hint="Import events as draft priority cards">
+          <Row label="Import calendar events" hint="Creates draft priority cards from events">
             <Switch
               checked={s.calendarImportEnabled}
               onCheckedChange={v => set('calendarImportEnabled', v)}
@@ -560,6 +559,11 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* ── Footer credit ────────────────────────────────────────────────── */}
+      <p className="text-center text-[10px] text-[#222527]/28 pt-2 pb-1 tracking-wide">
+        Built by Chris Ancheta with Replit
+      </p>
 
       {/* ── Modals ───────────────────────────────────────────────────────── */}
       <ConfirmModal
