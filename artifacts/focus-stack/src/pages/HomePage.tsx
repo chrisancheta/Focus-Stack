@@ -18,12 +18,14 @@ import { scoreTask } from '@/lib/scoring';
 import { useWindowMode } from '@/lib/windowMode';
 
 const PLACEHOLDER_EXAMPLES = [
-  'Finish the project proposal before Friday',
-  'Call the insurance company back',
+  'Submit the Q2 report — due by noon today',
+  'Call the client back before they close at 5',
+  'Finish the proposal — deadline is Friday EOD',
   "Prep slides for tomorrow's standup",
-  'Clear my inbox from this week',
-  'Review the draft contract',
-  'Block time for deep work this afternoon',
+  'Review and sign the contract — client is waiting',
+  'Clear urgent emails before the 10am meeting',
+  'Follow up on the overdue invoice',
+  'Block 2 hours for deep work before lunch',
 ];
 
 const EXAMPLE_ENTRIES = [
