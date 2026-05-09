@@ -185,7 +185,7 @@ function TimerFace({
 
         <text
           x={CENTER}
-          y={isDone ? CENTER + 22 : CENTER + 30}
+          y={CENTER + 30}
           textAnchor="middle"
           dominantBaseline="middle"
           fontSize="9.5"
@@ -193,7 +193,7 @@ function TimerFace({
           fontFamily="'DM Sans', sans-serif"
           fill={labelFill}
           letterSpacing="2"
-          style={{ transition: 'fill 0.40s ease, y 0.40s ease' }}
+          style={{ transition: 'fill 0.40s ease' }}
         >
           {statusLabel}
         </text>
