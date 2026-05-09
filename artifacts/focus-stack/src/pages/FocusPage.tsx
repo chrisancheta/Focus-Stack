@@ -304,16 +304,8 @@ export default function FocusPage() {
               style={{ borderBottom: '1px solid rgba(255,255,255,0.55)' }}
             >
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/36">
-                Focus session
+                Pomodoro
               </span>
-              {!isRunning && (
-                <button
-                  onClick={() => setIsEditingName(true)}
-                  className="text-[10px] text-[#222527]/32 hover:text-[#222527]/55 transition-colors"
-                >
-                  {sessionName ? 'Rename' : 'Name this session'}
-                </button>
-              )}
             </div>
 
             {/* Session name / edit */}
@@ -329,19 +321,19 @@ export default function FocusPage() {
                   className="w-full text-[15px] font-semibold bg-transparent outline-none text-[#222527] placeholder:text-[#222527]/25 border-none"
                   style={{ caretColor: '#222527' }}
                 />
-              ) : (
+              ) : sessionName ? (
                 <p
-                  className={`text-[15px] font-semibold leading-snug ${isRunning ? '' : 'cursor-pointer'}`}
-                  style={{ color: sessionName ? 'rgba(34,37,39,0.90)' : 'rgba(34,37,39,0.22)' }}
+                  className={`text-[15px] font-semibold leading-snug ${!isRunning ? 'cursor-pointer' : ''}`}
+                  style={{ color: 'rgba(34,37,39,0.90)' }}
                   onClick={() => !isRunning && setIsEditingName(true)}
                 >
-                  {sessionName || 'Untitled session'}
+                  {sessionName}
                 </p>
-              )}
+              ) : null}
 
               {/* Quick-pick label chips */}
               {!isRunning && (
-                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                <div className={`flex flex-wrap gap-1.5 ${sessionName ? 'mt-2.5' : ''}`}>
                   {QUICK_LABELS.map(label => {
                     const active = sessionName === label;
                     return (

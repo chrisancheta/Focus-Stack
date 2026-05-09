@@ -1,10 +1,31 @@
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import { TopNav } from './TopNav';
 import { useLocation } from 'wouter';
 import { useAppStore } from '@/lib/storeContext';
 import { CheckInModal } from '@/components/shared/CheckInModal';
 import { getTodayISODate } from '@/lib/utils';
 import { useWindowMode, WindowMode } from '@/lib/windowMode';
+import { useTimer } from '@/lib/timerContext';
+
+// ── Timer-driven mode sync ─────────────────────────────────────────────────────
+function TimerModeSync() {
+  const { isRunning } = useTimer();
+  const { mode, setMode } = useWindowMode();
+  const autoMinimizedRef = useRef(false);
+
+  useEffect(() => {
+    if (isRunning && mode === 'active') {
+      autoMinimizedRef.current = true;
+      setMode('mini');
+    } else if (!isRunning && mode === 'mini' && autoMinimizedRef.current) {
+      autoMinimizedRef.current = false;
+      setMode('active');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning]);
+
+  return null;
+}
 
 type Action = 'done' | 'carryover' | 'drop' | null;
 
@@ -174,6 +195,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
+      <TimerModeSync />
       <CheckInTrigger />
     </div>
   );

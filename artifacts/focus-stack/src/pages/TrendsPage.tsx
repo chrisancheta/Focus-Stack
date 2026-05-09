@@ -144,8 +144,8 @@ function buildRecommendations(data: {
       id: 'no-data', IconComp: Target,
       title: weekOffset === 0 ? 'No priorities this week yet' : 'No data for this week',
       body: weekOffset === 0
-        ? 'Go to the Eisenhower screen to add priorities for today. Tracking even one day gives you something to improve next week.'
-        : 'Nothing was recorded for this period.',
+        ? 'Add priorities on the Eisenhower screen. Tracking even one day improves next week.'
+        : 'Nothing recorded for this period.',
       action: '',
       severity: 'info',
     });
@@ -157,8 +157,8 @@ function buildRecommendations(data: {
     recs.push({
       id: 'overplanning', IconComp: Layers,
       title: `You're likely overplanning (${avgDailyLoad.toFixed(1)} tasks/day avg)`,
-      body: `Days with more than 5 priorities tend to end with carryover. Your completion rate reflects this — the bar chart shows planned vs done gaps on heavy days.`,
-      action: `Next week: cap each day at 5 priorities. Move extras to "Could do" and only promote them if you finish early.`,
+      body: `Days over 5 priorities end in carryover. The bar chart shows planned vs done gaps on heavy days.`,
+      action: `Cap each day at 5. Move extras to "Could do" and promote only when you finish early.`,
       severity: 'warning',
     });
   }
@@ -168,16 +168,16 @@ function buildRecommendations(data: {
     recs.push({
       id: 'carryover', IconComp: RotateCcw,
       title: `Carryover is stacking (${carryoverCount} items)`,
-      body: `When completion drops below 70%, deferred tasks tend to pile up rather than get resolved. Each ignored carryover erodes planning confidence.`,
-      action: `Before Monday: review your carryover list. For each item — do it, reschedule it with a real date, or drop it.`,
+      body: `Below 70% completion means deferred tasks pile up rather than get resolved.`,
+      action: `Before Monday: for each carryover — do it, reschedule with a real date, or drop it.`,
       severity: 'warning',
     });
   } else if (carryoverCount >= 1 && completionPct < 60) {
     recs.push({
       id: 'carryover-mild', IconComp: RotateCcw,
       title: `Items carrying over (${completionPct}% completion)`,
-      body: `${carryoverCount} task${carryoverCount > 1 ? 's are' : ' is'} deferred with a below-average completion rate. Adding more without clearing these compounds the debt.`,
-      action: `Clear or consciously drop existing carryover before adding new priorities next week.`,
+      body: `${carryoverCount} task${carryoverCount > 1 ? 's' : ''} deferred with below-average completion. Don't add more until these are cleared.`,
+      action: `Clear or drop carryover before adding anything new next week.`,
       severity: 'info',
     });
   }
@@ -187,8 +187,8 @@ function buildRecommendations(data: {
     recs.push({
       id: 'unplanned', IconComp: CalendarX,
       title: `${unplannedActiveDays} active days passed without a plan`,
-      body: `Unplanned days don't mean low-output days — they mean invisible output. If you worked but didn't track, the metrics undercount your results.`,
-      action: `Set a 2-minute morning ritual: open Focus Stack and pick 1–3 priorities before starting work. Even one counts.`,
+      body: `Unplanned days mean invisible output. If you worked but didn't track, your metrics undercount reality.`,
+      action: `Open Focus Stack each morning. Pick 1–3 priorities before you start work.`,
       severity: 'info',
     });
   }
@@ -198,8 +198,8 @@ function buildRecommendations(data: {
     recs.push({
       id: 'undercapacity', IconComp: TrendingUp,
       title: `You have capacity — ${completionPct}% on only ${avgDailyLoad.toFixed(1)} tasks/day`,
-      body: `Consistently hitting your targets with a light list is a signal to raise the bar. You're likely leaving higher-value work undone.`,
-      action: `Add 1–2 "Should do" tasks each day next week — you're clearly capable of handling more.`,
+      body: `Consistently hitting a light list means you're leaving higher-value work undone.`,
+      action: `Add 1–2 harder tasks next week. You have the capacity.`,
       severity: 'positive',
     });
   }
@@ -209,8 +209,8 @@ function buildRecommendations(data: {
     recs.push({
       id: 'low-completion', IconComp: Activity,
       title: `Below 50% completion — not an overplanning problem`,
-      body: `You planned ${totalPlanned} tasks and finished ${totalCompleted}. The list size looks right, so the gap likely points to momentum, clarity, or focus issues.`,
-      action: `Identify one Must Do each morning and complete it before doing anything else. Small wins compound.`,
+      body: `You planned ${totalPlanned} tasks and finished ${totalCompleted}. The list size looks fine — the gap is a momentum or focus issue.`,
+      action: `Name your #1 task each morning. Complete it before anything else.`,
       severity: 'warning',
     });
   }
@@ -220,8 +220,8 @@ function buildRecommendations(data: {
     recs.push({
       id: 'great-week', IconComp: CheckCircle2,
       title: `Strong week — ${completionPct}% with ${focusedDays} focused days`,
-      body: `That's a well-calibrated week: enough tasks to stay productive without overloading. Your planning is matching your execution capacity.`,
-      action: `Maintain the same daily load discipline next week. Consider using this week as your benchmark.`,
+      body: `Well-calibrated week: enough tasks without overloading. Planning matched execution.`,
+      action: `Keep the same daily load next week. Use this week as your benchmark.`,
       severity: 'positive',
     });
   }
@@ -231,8 +231,8 @@ function buildRecommendations(data: {
     recs.push({
       id: 'default', IconComp: Target,
       title: 'Commit to your top task first thing',
-      body: `Picking 3–5 priorities each morning and completing the top one before anything else is the habit that compounds fastest. Even a single focused session beats a reactive day.`,
-      action: 'Tomorrow: name your #1 priority before opening any messages, then protect the first hour for it.',
+      body: `Picking 3–5 priorities and completing the top one first is the highest-ROI habit. A focused session beats a reactive day.`,
+      action: 'Tomorrow: name your #1 before opening any messages. Protect the first hour for it.',
       severity: 'info',
     });
   }
