@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useAppStore } from '@/lib/storeContext';
 import { WeeklyBarChart } from '@/components/shared/WeeklyBarChart';
+import { RecommendationChip } from '@/components/priority/RecommendationChip';
 import {
   ChevronLeft, ChevronRight, Layers, RotateCcw, CalendarX,
   TrendingUp, CheckCircle2, Activity, Target, ArrowRight, Flame,
 } from 'lucide-react';
-import { DayPlan } from '@/lib/store';
+import { DayPlan, PriorityCard } from '@/lib/store';
+import { getTodayISODate } from '@/lib/utils';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 
@@ -421,6 +423,31 @@ export default function TrendsPage() {
   }), [completionPct, totalPlanned, totalCompleted, avgDailyLoad, carryoverCount,
       unplannedActiveDays, focusedDays, highLoadDays, streak, weekOffset, zeroDays]);
 
+  // ── Today bridge ─────────────────────────────────────────────────────────
+  const todayStr2 = getTodayISODate();
+  const todayPlan2 = state.dayPlans.find(dp => dp.date === todayStr2) ?? null;
+  const todayRankedIds = todayPlan2?.selectedPriorityIds ?? [];
+  const todayActivePriorities = todayRankedIds
+    .map((id: string) => state.priorities.find((p: PriorityCard) => p.id === id))
+    .filter((p: PriorityCard | undefined): p is PriorityCard =>
+      !!p && p.status !== 'completed' && p.status !== 'dropped' && p.status !== 'deferred'
+    );
+  const todayTopPriority = todayActivePriorities[0] ?? null;
+  const todayDoneCount   = todayPlan2?.completedPriorityIds.length ?? 0;
+  const todayTotalCount  = todayActivePriorities.length + todayDoneCount;
+
+  const todayModeLabel =
+    !todayPlan2 || todayTotalCount === 0 ? 'No plan today' :
+    todayDoneCount === todayTotalCount    ? 'Day complete' :
+    todayDoneCount > 0                   ? 'Active day' :
+    'Planning';
+
+  const todayModeDot =
+    todayDoneCount === todayTotalCount && todayTotalCount > 0 ? '#5a7d5d' :
+    todayDoneCount > 0                                        ? '#5a7d5d' :
+    todayTotalCount > 0                                       ? 'rgba(34,37,39,0.30)' :
+    'rgba(34,37,39,0.16)';
+
   return (
     <div className="space-y-4">
 
@@ -452,12 +479,54 @@ export default function TrendsPage() {
         </div>
       </div>
 
+      {/* ── Today bridge ───────────────────────────────────────────────── */}
+      {weekOffset === 0 && (
+        <div
+          className="rounded-2xl px-4 py-3 flex items-center gap-3"
+          style={GLASS_SUBTLE}
+        >
+          <div className="flex items-center gap-2 shrink-0">
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: todayModeDot }}
+            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/40">
+              {todayModeLabel}
+            </span>
+          </div>
+          <div className="w-px h-4 shrink-0" style={{ background: 'rgba(34,37,39,0.10)' }} />
+          {todayTopPriority ? (
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <RecommendationChip label={todayTopPriority.recommendationLabel} />
+              <span className="text-[11px] font-medium text-[#222527]/55 truncate">
+                {todayTopPriority.title}
+              </span>
+            </div>
+          ) : (
+            <span className="text-[11px] text-[#222527]/36">
+              Add priorities on Eisenhower to start tracking
+            </span>
+          )}
+          {todayTotalCount > 0 && (
+            <span
+              className="text-[10px] font-semibold shrink-0 px-2 py-0.5 rounded-full"
+              style={{
+                background: todayDoneCount === todayTotalCount ? 'rgba(107,143,110,0.16)' : 'rgba(34,37,39,0.07)',
+                color:      todayDoneCount === todayTotalCount ? '#5a7d5d' : 'rgba(34,37,39,0.44)',
+              }}
+            >
+              {todayDoneCount}/{todayTotalCount}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* ── KPI strip ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-4 gap-2.5">
         <KpiTile
           label="Completion"
           value={totalPlanned > 0 ? `${completionPct}%` : '—'}
-          sub={totalPlanned > 0 ? `${totalCompleted} of ${totalPlanned} done` : 'No tasks yet'}
+          sub={totalPlanned > 0 ? `${totalCompleted} of ${totalPlanned} done` : 'No plan yet'}
           accent={completionAccent}
         />
         <KpiTile
@@ -468,15 +537,19 @@ export default function TrendsPage() {
           subtitleStyle={streakSubStyle}
         />
         <KpiTile
-          label="Focused Days"
+          label="Well-scoped"
           value={focusedDays}
-          sub={`Days with 3–5 tasks`}
+          sub="Days with 3–5 tasks"
           accent={focusedDays >= 3 ? 'positive' : 'neutral'}
         />
         <KpiTile
           label="Carryover"
           value={carryoverCount}
-          sub={carryoverCount === 0 ? 'All clear' : carryoverCount === 1 ? '1 item deferred' : `${carryoverCount} items deferred`}
+          sub={
+            carryoverCount === 0
+              ? 'Clear'
+              : carryoverCount === 1 ? '1 task deferred' : `${carryoverCount} deferred`
+          }
           accent={carryoverAccent}
         />
       </div>

@@ -4,6 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { ConfirmModal } from '@/components/shared/ConfirmModal';
+import { RecommendationChip } from '@/components/priority/RecommendationChip';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronDown } from 'lucide-react';
 
@@ -124,10 +125,16 @@ function WeightSplitBar({ iw, uw }: { iw: number; uw: number }) {
 }
 
 const PREVIEW_TASKS = [
-  { id: 'a', title: 'Quarterly strategy review', importance: 5, urgency: 1, iTag: 'I:5', uTag: 'U:1' },
-  { id: 'b', title: 'Client escalation call',    importance: 3, urgency: 5, iTag: 'I:3', uTag: 'U:5' },
-  { id: 'c', title: 'Team standup prep',          importance: 2, urgency: 3, iTag: 'I:2', uTag: 'U:3' },
+  { id: 'a', title: 'Quarterly strategy review', importance: 5, urgency: 1 },
+  { id: 'b', title: 'Client escalation call',    importance: 3, urgency: 5 },
+  { id: 'c', title: 'Team standup prep',          importance: 2, urgency: 3 },
 ];
+
+const RANK_TO_LABEL: Record<number, 'do-now' | 'schedule' | 'reconsider'> = {
+  0: 'do-now',
+  1: 'schedule',
+  2: 'reconsider',
+};
 
 function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
   const maxPossible = 5 * iw + 5 * uw || 1;
@@ -136,11 +143,6 @@ function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
     .map(t => ({ ...t, score: t.importance * iw + t.urgency * uw }))
     .sort((a, b) => b.score - a.score);
 
-  const rankStyle = (idx: number) =>
-    idx === 0
-      ? { background: '#222527', color: '#fff' }
-      : { background: 'rgba(34,37,39,0.10)', color: 'rgba(34,37,39,0.55)' };
-
   return (
     <div className="rounded-2xl overflow-hidden" style={GLASS_SUBTLE}>
       <div
@@ -148,42 +150,38 @@ function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
         style={{ borderBottom: '1px solid rgba(255,255,255,0.55)' }}
       >
         <p className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/55">
-          Live Ranking Preview
+          Live ranking preview
         </p>
-        <p className="text-[10px] text-[#222527]/38">Move sliders to see changes</p>
+        <p className="text-[10px] text-[#222527]/36">Adjust sliders to see changes</p>
       </div>
 
       <div className="px-4 py-1 divide-y divide-white/35">
         {ranked.map((t, i) => {
           const barPct = (t.score / maxPossible) * 100;
+          const chip   = RANK_TO_LABEL[i];
           return (
             <div key={t.id} className="flex items-center gap-3 py-2.5">
               <span
                 className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-all duration-300"
-                style={rankStyle(i)}
+                style={
+                  i === 0
+                    ? { background: '#222527', color: '#fff' }
+                    : { background: 'rgba(34,37,39,0.10)', color: 'rgba(34,37,39,0.52)' }
+                }
               >
                 {i + 1}
               </span>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
                   <span className="text-xs font-medium text-[#222527] truncate">{t.title}</span>
-                  <div className="flex gap-1 shrink-0">
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md"
-                      style={{ background: 'rgba(34,37,39,0.09)', color: 'rgba(34,37,39,0.55)' }}>
-                      {t.iTag}
-                    </span>
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md"
-                      style={{ background: 'rgba(107,143,110,0.15)', color: '#2a4e2d' }}>
-                      {t.uTag}
-                    </span>
-                  </div>
+                  <RecommendationChip label={chip} />
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(34,37,39,0.10)' }}>
                   <div
                     className="h-full rounded-full transition-all duration-300 ease-out"
                     style={{
-                      width: `${barPct}%`,
-                      background: i === 0 ? 'rgba(34,37,39,0.80)' : 'rgba(34,37,39,0.35)',
+                      width:      `${barPct}%`,
+                      background: i === 0 ? 'rgba(34,37,39,0.80)' : 'rgba(34,37,39,0.32)',
                     }}
                   />
                 </div>
@@ -193,13 +191,24 @@ function LiveRankingPreview({ iw, uw }: { iw: number; uw: number }) {
         })}
       </div>
 
-      <div className="px-4 py-2" style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }}>
-        <p className="text-[10px] text-[#222527]/40 leading-relaxed">
-          Rankings are based on:{' '}
-          <span className="font-semibold text-[#222527]/55">
-            score = importance × {Math.round(iw * 100)}% + urgency × {Math.round(uw * 100)}%
-          </span>
+      <div
+        className="px-4 py-3 space-y-1.5"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }}
+      >
+        <p className="text-[10px] font-semibold text-[#222527]/40 mb-2">
+          score = importance × {Math.round(iw * 100)}% + urgency × {Math.round(uw * 100)}%
         </p>
+        <div className="flex flex-wrap gap-1.5">
+          {(['do-now', 'schedule', 'reconsider', 'deprioritize'] as const).map((label, idx) => {
+            const desc = ['#1 ranked task', '#2 ranked task', '#3+ ranked', 'Lowest scored'][idx];
+            return (
+              <div key={label} className="flex items-center gap-1">
+                <RecommendationChip label={label} />
+                <span className="text-[9px] text-[#222527]/34">{desc}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -365,7 +374,10 @@ export default function SettingsPage() {
 
       {/* ── Focus Timer ──────────────────────────────────────────────── */}
       <CollapsibleSection title="Focus Timer" open={open.focus} onToggle={() => toggle('focus')}>
-        <SettingRow label="Default session length" description="How long each focus block runs">
+        <SettingRow
+          label="Default session length"
+          description="Each Pomodoro block runs this long. Task cards show matching estimates (~25m, ~45m) to help you choose the right session."
+        >
           <Select
             value={s.defaultFocusMinutes.toString()}
             onValueChange={v => handleChange('defaultFocusMinutes', parseInt(v))}
@@ -396,7 +408,7 @@ export default function SettingsPage() {
         cardStyle={GLASS_ELEVATED}
       >
         <p className="text-xs text-[#222527]/50 leading-relaxed mb-5">
-          When you rate a task's importance and urgency, these weights determine how the two scores are combined into a ranking recommendation. Adjust to favor strategic depth or time-sensitive responsiveness.
+          When you rate a task's importance and urgency (1–5), these weights combine both scores into a final ranking. The highest-scoring task becomes <strong className="text-[#6b4800] font-semibold">Do Now</strong>, second becomes <strong className="text-[#2a4e2d] font-semibold">Do Today</strong>, and so on. Adjust to favor strategic depth or deadline-driven responsiveness.
         </p>
 
         {/* Weight split bar */}
