@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, X, Link2, Coffee, Zap, RotateCcw, Play, Pause, ArrowRight } from 'lucide-react';
+import { X, Link2, Coffee, Zap, RotateCcw, Play, Pause, ChevronDown } from 'lucide-react';
 import { FocusTimerWidget } from '@/components/shared/FocusTimerWidget';
 import { RecommendationChip } from '@/components/priority/RecommendationChip';
 import { useAppStore } from '@/lib/storeContext';
 import { useTimer } from '@/lib/timerContext';
 import { getTodayISODate } from '@/lib/utils';
 import type { PriorityCard } from '@/lib/store';
+
+// ── Design tokens ──────────────────────────────────────────────────────────────
 
 const GLASS = {
   background: 'rgba(255,255,255,0.55)',
@@ -22,14 +24,27 @@ const GLASS_SUBTLE = {
   border: '1px solid rgba(255,255,255,0.52)',
 };
 
-export default function FocusPage() {
-  const { state } = useAppStore();
-  const { linkedPriorityId, linkPriority, isRunning, isDone, toggle, reset, timeLeft, duration } = useTimer();
-  const [showPicker, setShowPicker] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
+const QUICK_LABELS = ['Deep work', 'Study block', 'Reading', 'Planning', 'Admin', 'Learning'];
 
-  const today = getTodayISODate();
-  const todayPlan = state.dayPlans.find(dp => dp.date === today) ?? null;
+// ── Component ──────────────────────────────────────────────────────────────────
+
+export default function FocusPage() {
+  const { state }      = useAppStore();
+  const { linkedPriorityId, linkPriority, isRunning, isDone, toggle, reset, timeLeft, duration } = useTimer();
+
+  // Standalone session identity
+  const [sessionName,    setSessionName]    = useState('');
+  const [isEditingName,  setIsEditingName]  = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Task picker
+  const [showPicker, setShowPicker] = useState(false);
+  const pickerRef    = useRef<HTMLDivElement>(null);
+
+  // ── Derived data ────────────────────────────────────────────────────────────
+
+  const today        = getTodayISODate();
+  const todayPlan    = state.dayPlans.find(dp => dp.date === today) ?? null;
   const todayRankedIds = todayPlan?.selectedPriorityIds ?? [];
 
   const todayActivePriorities = todayRankedIds
@@ -54,15 +69,7 @@ export default function FocusPage() {
     ? todayRankedIds.indexOf(linked.id) + 1
     : 0;
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
-        setShowPicker(false);
-      }
-    };
-    if (showPicker) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showPicker]);
+  // ── Timer math ──────────────────────────────────────────────────────────────
 
   const todaySessions    = state.focusSessions.filter(s => s.startedAt.slice(0, 10) === today);
   const completedCount   = todaySessions.length;
@@ -74,16 +81,37 @@ export default function FocusPage() {
   const totalFocusedMins = todaySessions.reduce((acc, s) => acc + s.plannedMinutes, 0);
   const nextBreakType    = positionInSet === 3 ? 'Long break' : 'Short break';
   const isPaused         = !isRunning && !isDone && timeLeft < duration * 60;
-  const isIdle           = !isRunning && !isDone && timeLeft === duration * 60;
-  const sessionLabel     = `Session ${positionInSet + 1} of 4`;
+  const pomodoroPosLabel = `Session ${positionInSet + 1} of 4`;
 
-  const doneCount    = todayPlan ? todayPlan.completedPriorityIds.length : 0;
-  const totalInPlan  = todayActivePriorities.length + doneCount;
+  const doneCount   = todayPlan ? todayPlan.completedPriorityIds.length : 0;
+  const totalInPlan = todayActivePriorities.length + doneCount;
+
+  // ── Event handlers ──────────────────────────────────────────────────────────
+
+  // Close picker on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowPicker(false);
+      }
+    };
+    if (showPicker) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showPicker]);
+
+  // Focus name input when editing starts
+  useEffect(() => {
+    if (isEditingName) nameInputRef.current?.focus();
+  }, [isEditingName]);
+
+  const commitName = () => setIsEditingName(false);
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col items-center gap-3 pb-8 max-w-md mx-auto w-full">
 
-      {/* ── Session context bar ─────────────────────────────────────────── */}
+      {/* ── Pomodoro context bar ───────────────────────────────────────── */}
       <div className="w-full flex items-center justify-between px-1 pt-1">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
@@ -92,18 +120,18 @@ export default function FocusPage() {
               const isNext = i === positionInSet && !isDone;
               return (
                 <span key={i} style={{
-                  display: 'block',
-                  width:   filled ? 9 : isNext ? 7 : 6,
-                  height:  filled ? 9 : isNext ? 7 : 6,
+                  display:      'block',
+                  width:        filled ? 9 : isNext ? 7 : 6,
+                  height:       filled ? 9 : isNext ? 7 : 6,
                   borderRadius: '50%',
-                  background: filled ? '#222527' : isNext ? 'rgba(34,37,39,0.28)' : 'rgba(34,37,39,0.12)',
-                  border: isNext ? '1.5px solid rgba(34,37,39,0.35)' : 'none',
-                  transition: 'all 0.3s',
+                  background:   filled ? '#222527' : isNext ? 'rgba(34,37,39,0.28)' : 'rgba(34,37,39,0.12)',
+                  border:       isNext ? '1.5px solid rgba(34,37,39,0.35)' : 'none',
+                  transition:   'all 0.3s',
                 }} />
               );
             })}
           </div>
-          <span className="text-xs font-medium text-[#222527]/55">{sessionLabel}</span>
+          <span className="text-xs font-medium text-[#222527]/55">{pomodoroPosLabel}</span>
           {completedSets > 0 && (
             <span className="text-[11px] text-[#222527]/35">
               · {completedSets} {completedSets === 1 ? 'set' : 'sets'} done
@@ -131,18 +159,22 @@ export default function FocusPage() {
         </div>
       </div>
 
-      {/* ── Task linkage ───────────────────────────────────────────────── */}
+      {/* ── Session identity card + picker ─────────────────────────────── */}
       <div className="w-full relative" ref={pickerRef}>
 
         {linked ? (
-          /* Linked card — recommendation vocabulary + rank */
+          /* ── MODE A: Linked — a priority is attached ─────────────────── */
           <div className="w-full rounded-2xl overflow-hidden" style={GLASS}>
+
+            {/* Linked header — "Focusing on" appears ONLY here */}
             <div
               className="flex items-center gap-2 px-4 py-2.5"
               style={{ borderBottom: '1px solid rgba(255,255,255,0.55)' }}
             >
               <Link2 className="h-3 w-3 text-[#6B8F6E] shrink-0" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/36">Focusing on</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/36">
+                Focusing on
+              </span>
               {linkedRankInToday > 0 && (
                 <span
                   className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
@@ -159,116 +191,172 @@ export default function FocusPage() {
               {!isRunning && (
                 <button
                   onClick={() => linkPriority(null)}
-                  className="p-1 rounded-lg text-[#222527]/28 hover:text-[#222527]/56 transition-colors"
-                  title="Unlink task"
+                  className="p-1 rounded-lg text-[#222527]/28 hover:text-[#222527]/55 transition-colors"
+                  title="Detach task"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
+
+            {/* Task body */}
             <div className="px-4 py-3.5">
-              <p className="text-[15px] font-semibold text-[#222527] leading-snug mb-1.5">{linked.title}</p>
+              <p className="text-[15px] font-semibold text-[#222527] leading-snug mb-1.5">
+                {linked.title}
+              </p>
               {linked.recommendationReason && (
-                <p className="text-[11px] text-[#222527]/42 leading-snug mb-2">{linked.recommendationReason}</p>
+                <p className="text-[11px] text-[#222527]/42 leading-snug mb-2">
+                  {linked.recommendationReason}
+                </p>
               )}
+              {/* Up next — only when linked task is #1 in today's plan */}
               {linkedRankInToday === 1 && nextTodayPriority && (
                 <div className="flex items-center gap-1.5 mt-1">
                   <span className="text-[10px] text-[#222527]/28">Up next:</span>
-                  <span className="text-[10px] font-medium text-[#222527]/48 truncate max-w-[170px]">
+                  <span className="text-[10px] font-medium text-[#222527]/48 truncate max-w-[166px]">
                     {nextTodayPriority.title}
                   </span>
                   <RecommendationChip label={nextTodayPriority.recommendationLabel} />
                 </div>
               )}
             </div>
+
+            {/* Switch task — only when idle */}
+            {!isRunning && activePriorities.length > 1 && (
+              <div
+                className="px-4 py-2"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }}
+              >
+                <button
+                  onClick={() => setShowPicker(true)}
+                  className="text-[10px] text-[#222527]/32 hover:text-[#222527]/56 transition-colors"
+                >
+                  Switch task →
+                </button>
+              </div>
+            )}
           </div>
 
-        ) : topTodayPriority && !showPicker ? (
-          /* Suggested — top-ranked task from today's plan */
+        ) : (
+          /* ── MODE B: Standalone — no task linked ─────────────────────── */
           <div className="w-full rounded-2xl overflow-hidden" style={GLASS}>
+
+            {/* Standalone header */}
             <div
-              className="flex items-center justify-between gap-2 px-4 py-2.5"
+              className="flex items-center justify-between px-4 py-2.5"
               style={{ borderBottom: '1px solid rgba(255,255,255,0.55)' }}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
-                  style={{ background: '#222527', color: '#fff' }}
-                >1</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/36">
-                  Suggested for this session
-                </span>
-                <RecommendationChip label={topTodayPriority.recommendationLabel} />
-              </div>
-              <button
-                onClick={() => !isRunning && setShowPicker(true)}
-                disabled={isRunning}
-                className="text-[10px] text-[#222527]/34 hover:text-[#222527]/58 transition-colors disabled:opacity-30 shrink-0"
-              >
-                Change
-              </button>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/36">
+                Focus session
+              </span>
+              {!isRunning && (
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  className="text-[10px] text-[#222527]/32 hover:text-[#222527]/55 transition-colors"
+                >
+                  {sessionName ? 'Rename' : 'Name this session'}
+                </button>
+              )}
             </div>
-            <button
-              onClick={() => !isRunning && linkPriority(topTodayPriority.id)}
-              disabled={isRunning}
-              className="w-full px-4 py-3.5 text-left transition-all hover:bg-white/25 disabled:opacity-50"
-            >
-              <p className="text-[15px] font-semibold text-[#222527] leading-snug mb-1">
-                {topTodayPriority.title}
-              </p>
-              {topTodayPriority.recommendationReason && (
-                <p className="text-[11px] text-[#222527]/42 leading-snug">
-                  {topTodayPriority.recommendationReason}
+
+            {/* Session name / edit */}
+            <div className="px-4 pt-3.5 pb-3">
+              {isEditingName ? (
+                <input
+                  ref={nameInputRef}
+                  value={sessionName}
+                  onChange={e => setSessionName(e.target.value)}
+                  onBlur={commitName}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') commitName(); }}
+                  placeholder="Name this session…"
+                  className="w-full text-[15px] font-semibold bg-transparent outline-none text-[#222527] placeholder:text-[#222527]/25 border-none"
+                  style={{ caretColor: '#222527' }}
+                />
+              ) : (
+                <p
+                  className={`text-[15px] font-semibold leading-snug ${isRunning ? '' : 'cursor-pointer'}`}
+                  style={{ color: sessionName ? 'rgba(34,37,39,0.90)' : 'rgba(34,37,39,0.22)' }}
+                  onClick={() => !isRunning && setIsEditingName(true)}
+                >
+                  {sessionName || 'Untitled session'}
                 </p>
               )}
-              {nextTodayPriority && (
-                <div className="flex items-center gap-1.5 mt-2.5">
-                  <span className="text-[10px] text-[#222527]/26">Up next:</span>
-                  <span className="text-[10px] font-medium text-[#222527]/44 truncate max-w-[160px]">
-                    {nextTodayPriority.title}
-                  </span>
-                  <RecommendationChip label={nextTodayPriority.recommendationLabel} />
+
+              {/* Quick-pick label chips */}
+              {!isRunning && (
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {QUICK_LABELS.map(label => {
+                    const active = sessionName === label;
+                    return (
+                      <button
+                        key={label}
+                        onClick={() => { setSessionName(active ? '' : label); setIsEditingName(false); }}
+                        className="text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:opacity-80"
+                        style={{
+                          background: active ? 'rgba(34,37,39,0.12)' : 'rgba(255,255,255,0.62)',
+                          color:      active ? '#222527' : 'rgba(34,37,39,0.44)',
+                          border:     active ? '1px solid rgba(34,37,39,0.20)' : '1px solid rgba(255,255,255,0.72)',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
-            </button>
+            </div>
+
+            {/* Task affordance — secondary, optional */}
+            {!isRunning && (
+              <div
+                className="px-4 py-2.5"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.50)' }}
+              >
+                {topTodayPriority ? (
+                  /* Today's top-ranked task as a quiet "connect" row */
+                  <button
+                    onClick={() => linkPriority(topTodayPriority.id)}
+                    className="w-full flex items-center gap-2 text-left group"
+                  >
+                    <RecommendationChip label={topTodayPriority.recommendationLabel} />
+                    <span className="text-[11px] font-medium text-[#222527]/44 truncate flex-1 group-hover:text-[#222527]/65 transition-colors">
+                      {topTodayPriority.title}
+                    </span>
+                    <span className="text-[10px] text-[#222527]/26 shrink-0 group-hover:text-[#222527]/46 transition-colors">
+                      Connect →
+                    </span>
+                  </button>
+                ) : activePriorities.length > 0 ? (
+                  /* Generic link affordance when no day plan but priorities exist */
+                  <button
+                    onClick={() => setShowPicker(true)}
+                    className="flex items-center gap-1.5 text-[10px] text-[#222527]/32 hover:text-[#222527]/55 transition-colors"
+                  >
+                    <Link2 className="h-2.5 w-2.5" />
+                    Link to a priority →
+                  </button>
+                ) : null}
+              </div>
+            )}
           </div>
+        )}
 
-        ) : !showPicker ? (
-          /* No plan, no link */
-          <button
-            onClick={() => !isRunning && setShowPicker(v => !v)}
-            disabled={isRunning}
-            className="w-full rounded-2xl px-4 py-3.5 flex items-center gap-3 transition-all hover:opacity-80 disabled:opacity-40"
-            style={GLASS_SUBTLE}
-          >
-            <div
-              className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(107,143,110,0.15)', border: '1px solid rgba(107,143,110,0.22)' }}
-            >
-              <Link2 className="h-4 w-4 text-[#6B8F6E]" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-semibold text-[#222527]/65">Link a task to this session</p>
-              <p className="text-xs text-[#222527]/35">Choose from your Eisenhower priorities</p>
-            </div>
-            <ChevronDown className="h-4 w-4 text-[#222527]/35" />
-          </button>
-        ) : null}
-
-        {/* Picker dropdown */}
+        {/* ── Task picker dropdown ─────────────────────────────────────── */}
         {showPicker && (
           <div
             className="absolute top-full mt-2 left-0 right-0 rounded-2xl overflow-hidden z-50"
             style={{
-              background: 'rgba(255,255,255,0.92)',
-              backdropFilter: 'blur(24px)',
+              background:           'rgba(255,255,255,0.92)',
+              backdropFilter:       'blur(24px)',
               WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(255,255,255,0.80)',
-              boxShadow: '0 8px 32px rgba(34,37,39,0.12)',
+              border:               '1px solid rgba(255,255,255,0.80)',
+              boxShadow:            '0 8px 32px rgba(34,37,39,0.12)',
             }}
           >
             <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/40">Choose a task</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/40">
+                Choose a task
+              </p>
               <button
                 onClick={() => setShowPicker(false)}
                 className="text-[10px] text-[#222527]/34 hover:text-[#222527]/58 transition-colors"
@@ -276,62 +364,64 @@ export default function FocusPage() {
                 Cancel
               </button>
             </div>
-            {activePriorities.length === 0 ? (
-              <div className="px-4 pb-4 py-3 text-center">
-                <p className="text-sm text-[#222527]/50">No active tasks yet.</p>
-                <p className="text-xs text-[#222527]/35 mt-0.5">Add priorities on the Eisenhower screen.</p>
-              </div>
-            ) : (
-              <div className="max-h-56 overflow-y-auto py-1">
-                {todayActivePriorities.length > 0 && (
-                  <>
-                    <p className="px-4 pt-1 pb-1 text-[9px] font-bold uppercase tracking-widest text-[#222527]/30">
-                      Today's plan
-                    </p>
-                    {todayActivePriorities.map((p, i) => (
-                      <button
-                        key={p.id}
-                        onClick={() => { linkPriority(p.id); setShowPicker(false); }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/60 transition-colors flex items-center gap-3"
+
+            <div className="max-h-56 overflow-y-auto py-1">
+              {todayActivePriorities.length > 0 && (
+                <>
+                  <p className="px-4 pt-1 pb-1 text-[9px] font-bold uppercase tracking-widest text-[#222527]/30">
+                    Today's plan
+                  </p>
+                  {todayActivePriorities.map((p, i) => (
+                    <button
+                      key={p.id}
+                      onClick={() => { linkPriority(p.id); setShowPicker(false); }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-white/60 transition-colors flex items-center gap-3"
+                    >
+                      <span
+                        className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
+                        style={{
+                          background: i === 0 ? '#222527' : 'rgba(34,37,39,0.10)',
+                          color:      i === 0 ? '#fff'    : 'rgba(34,37,39,0.52)',
+                        }}
                       >
-                        <span
-                          className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
-                          style={{
-                            background: i === 0 ? '#222527' : 'rgba(34,37,39,0.10)',
-                            color:      i === 0 ? '#fff'    : 'rgba(34,37,39,0.52)',
-                          }}
-                        >
-                          {i + 1}
-                        </span>
-                        <p className="text-sm text-[#222527] flex-1 truncate">{p.title}</p>
-                        <RecommendationChip label={p.recommendationLabel} />
-                      </button>
-                    ))}
-                  </>
-                )}
-                {offPlanPriorities.length > 0 && (
-                  <>
-                    <p className="px-4 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-[#222527]/28">
-                      {todayActivePriorities.length > 0 ? 'Other tasks' : 'All tasks'}
-                    </p>
-                    {offPlanPriorities.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => { linkPriority(p.id); setShowPicker(false); }}
-                        className="w-full text-left px-4 py-2.5 hover:bg-white/60 transition-colors flex items-center gap-3"
-                      >
-                        <span
-                          className="shrink-0 h-1.5 w-1.5 rounded-full mt-0.5"
-                          style={{ background: 'rgba(34,37,39,0.24)' }}
-                        />
-                        <p className="text-sm text-[#222527] flex-1 truncate">{p.title}</p>
-                        <RecommendationChip label={p.recommendationLabel} />
-                      </button>
-                    ))}
-                  </>
-                )}
-              </div>
-            )}
+                        {i + 1}
+                      </span>
+                      <p className="text-sm text-[#222527] flex-1 truncate">{p.title}</p>
+                      <RecommendationChip label={p.recommendationLabel} />
+                    </button>
+                  ))}
+                </>
+              )}
+              {offPlanPriorities.length > 0 && (
+                <>
+                  <p className="px-4 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-[#222527]/28">
+                    {todayActivePriorities.length > 0 ? 'Other tasks' : 'All tasks'}
+                  </p>
+                  {offPlanPriorities.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { linkPriority(p.id); setShowPicker(false); }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-white/60 transition-colors flex items-center gap-3"
+                    >
+                      <span
+                        className="shrink-0 h-1.5 w-1.5 rounded-full mt-0.5"
+                        style={{ background: 'rgba(34,37,39,0.24)' }}
+                      />
+                      <p className="text-sm text-[#222527] flex-1 truncate">{p.title}</p>
+                      <RecommendationChip label={p.recommendationLabel} />
+                    </button>
+                  ))}
+                </>
+              )}
+              {activePriorities.length === 0 && (
+                <div className="px-4 py-4 text-center">
+                  <p className="text-sm text-[#222527]/50">No active tasks yet.</p>
+                  <p className="text-xs text-[#222527]/35 mt-0.5">
+                    Add priorities on the Eisenhower screen.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -370,25 +460,6 @@ export default function FocusPage() {
             : <><Play  className="h-4 w-4" />Resume session</>
           }
         </button>
-      ) : isIdle && activePriorities.length === 0 ? (
-        /* Coaching nudge — no tasks at all */
-        <div
-          className="w-full rounded-2xl px-4 py-3.5 flex items-start gap-3"
-          style={{ background: 'rgba(107,143,110,0.10)', border: '1px solid rgba(107,143,110,0.22)' }}
-        >
-          <div
-            className="h-7 w-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-            style={{ background: 'rgba(107,143,110,0.20)' }}
-          >
-            <ArrowRight className="h-3.5 w-3.5 text-[#5a7d5d]" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[#222527] mb-0.5">Start on Eisenhower first</p>
-            <p className="text-xs text-[#222527]/50 leading-snug">
-              Add priorities, get a Do Now / Do Today recommendation, then tap "Start My Day" — the timer links to your top-ranked task automatically.
-            </p>
-          </div>
-        </div>
       ) : null}
 
       {/* ── Break suggestion ───────────────────────────────────────────── */}
@@ -408,7 +479,7 @@ export default function FocusPage() {
             <>
               <Zap className="h-4 w-4 shrink-0 opacity-40" />
               <span className="text-sm font-medium opacity-70">
-                Good session — short break, then continue with your next task
+                Good session — short break, then keep going
               </span>
             </>
           )}
@@ -423,7 +494,7 @@ export default function FocusPage() {
             label: 'Focused today',
             sub:   completedCount > 0
               ? `${completedCount} session${completedCount !== 1 ? 's' : ''}`
-              : 'Start your first',
+              : 'First session',
           },
           {
             value: totalInPlan > 0 ? `${doneCount}/${totalInPlan}` : '—',
@@ -435,7 +506,7 @@ export default function FocusPage() {
           {
             value: completedSets > 0 ? String(completedSets) : '—',
             label: 'Full sets',
-            sub:   completedSets > 0 ? `${completedSets * setSize} sessions` : 'Complete 4 to score',
+            sub:   completedSets > 0 ? `${completedSets * setSize} sessions` : 'Complete 4',
           },
         ].map(({ value, label, sub }) => (
           <div key={label} className="rounded-xl px-3 py-2.5 text-center" style={GLASS_SUBTLE}>
@@ -450,12 +521,16 @@ export default function FocusPage() {
       {todaySessions.length > 0 && (
         <div className="w-full rounded-2xl overflow-hidden" style={GLASS_SUBTLE}>
           <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/40">Today's sessions</p>
-            <p className="text-[10px] text-[#222527]/30">{todaySessions.length} recorded</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/40">
+              Today's sessions
+            </p>
+            <p className="text-[10px] text-[#222527]/30">
+              {todaySessions.length} recorded
+            </p>
           </div>
-          <div className="px-4 pb-3 space-y-0">
+          <div className="px-4 pb-3">
             {todaySessions.slice(-5).reverse().map((session, i) => {
-              const priority = session.linkedPriorityId
+              const priority   = session.linkedPriorityId
                 ? state.priorities.find(p => p.id === session.linkedPriorityId)
                 : null;
               const started    = new Date(session.startedAt);
@@ -467,7 +542,11 @@ export default function FocusPage() {
                 <div
                   key={session.id}
                   className="flex items-start justify-between py-2.5"
-                  style={{ borderBottom: i < Math.min(todaySessions.length, 5) - 1 ? '1px solid rgba(255,255,255,0.45)' : 'none' }}
+                  style={{
+                    borderBottom: i < Math.min(todaySessions.length, 5) - 1
+                      ? '1px solid rgba(255,255,255,0.45)'
+                      : 'none',
+                  }}
                 >
                   <div className="flex items-start gap-2.5 min-w-0">
                     <div
@@ -487,7 +566,9 @@ export default function FocusPage() {
                           </div>
                         </>
                       ) : (
-                        <p className="text-xs text-[#222527]/35 italic mt-0.5">Unlinked session</p>
+                        <p className="text-xs font-medium text-[#222527]/42 mt-0.5">
+                          Open focus session
+                        </p>
                       )}
                     </div>
                   </div>
