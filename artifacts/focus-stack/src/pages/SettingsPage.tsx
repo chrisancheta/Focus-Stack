@@ -274,7 +274,7 @@ export default function SettingsPage() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-2 pb-3">
+    <div className="space-y-2 pb-0">
 
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <div className="px-1 pb-1">
@@ -564,6 +564,7 @@ export default function SettingsPage() {
       <p className="text-center text-[10px] text-[#222527]/28 pt-2 pb-1 tracking-wide">
         Built by Chris Ancheta with Replit
       </p>
+
 
       {/* ── Modals ───────────────────────────────────────────────────────── */}
       <ConfirmModal

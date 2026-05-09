@@ -188,7 +188,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   ? '14px 12px 18px'
                   : effectiveMode === 'active'
                     ? '14px 13px 18px'
-                    : '16px 14px 22px',
+                    : '16px 14px 12px',
               }}
             >
               {children}
