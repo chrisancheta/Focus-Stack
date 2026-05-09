@@ -91,6 +91,11 @@ export default function HomePage() {
   const { setMode } = useWindowMode();
   const [pendingAdd, setPendingAdd] = useState<{ title: string; match: SimilarMatch } | null>(null);
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  const [openSecondary, setOpenSecondary] = useState<'candidates' | 'completed' | null>(null);
+
+  const toggleExpand = (id: string) =>
+    setExpandedCardId(prev => prev === id ? null : id);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -849,6 +854,8 @@ export default function HomePage() {
                     key={p.id}
                     priority={p}
                     rank={rankMap.get(p.id)}
+                    isExpanded={expandedCardId === p.id}
+                    onToggleExpand={() => toggleExpand(p.id)}
                     onClick={() => setSelectedPriorityId(p.id)}
                     onComplete={() => handleComplete(p.id)}
                     onMoveUp={() => handleMoveUp(p.id)}
@@ -862,9 +869,14 @@ export default function HomePage() {
               })()}
             </div>
 
-            {/* Start My Day CTA */}
+            {/* Start My Day CTA — sticky so it remains reachable as the list grows */}
             {activePriorities.length > 0 && (
-              <div className="pt-1">
+              <div
+                className="sticky bottom-0 z-10 pt-5 pb-2"
+                style={{
+                  background: 'linear-gradient(to bottom, transparent 0%, rgba(240,243,238,0.97) 38%)',
+                }}
+              >
                 <button
                   onClick={handleStartMyDay}
                   className="w-full h-12 rounded-2xl font-semibold text-sm tracking-wide transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center"
@@ -875,16 +887,23 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* Candidates + Completed */}
+            {/* Secondary sections — only one open at a time */}
             {(candidatePriorities.length > 0 || completedPriorities.length > 0) && (
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2 pt-1">
                 {candidatePriorities.length > 0 && (
-                  <CollapsibleSection title="Also on your list" count={candidatePriorities.length}>
+                  <CollapsibleSection
+                    title="Also on your list"
+                    count={candidatePriorities.length}
+                    open={openSecondary === 'candidates'}
+                    onOpenChange={v => setOpenSecondary(v ? 'candidates' : null)}
+                  >
                     <div className="space-y-2 mt-2">
                       {candidatePriorities.map(p => (
                         <PriorityCard
                           key={p.id}
                           priority={p}
+                          isExpanded={expandedCardId === p.id}
+                          onToggleExpand={() => toggleExpand(p.id)}
                           onClick={() => setSelectedPriorityId(p.id)}
                           onStartFocus={() => handleStartFocus(p.id)}
                           onNoteChange={note => updatePriority(p.id, { notes: note })}
@@ -897,6 +916,8 @@ export default function HomePage() {
                   <CollapsibleSection
                     title="Completed Today"
                     count={completedPriorities.length}
+                    open={openSecondary === 'completed'}
+                    onOpenChange={v => setOpenSecondary(v ? 'completed' : null)}
                     action={
                       <button
                         onClick={e => { e.stopPropagation(); handleClearCompleted(); }}
@@ -912,6 +933,8 @@ export default function HomePage() {
                         <PriorityCard
                           key={p.id}
                           priority={p}
+                          isExpanded={expandedCardId === p.id}
+                          onToggleExpand={() => toggleExpand(p.id)}
                           onClick={() => setSelectedPriorityId(p.id)}
                         />
                       ))}

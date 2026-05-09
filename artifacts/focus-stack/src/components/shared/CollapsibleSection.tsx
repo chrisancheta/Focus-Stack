@@ -7,18 +7,36 @@ interface CollapsibleSectionProps {
   title: string;
   count?: number;
   defaultOpen?: boolean;
+  /** Controlled open state — supply alongside onOpenChange for accordion behaviour */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children: React.ReactNode;
   className?: string;
   action?: React.ReactNode;
 }
 
-export function CollapsibleSection({ title, count, defaultOpen = false, children, className, action }: CollapsibleSectionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+export function CollapsibleSection({
+  title,
+  count,
+  defaultOpen = false,
+  open: controlledOpen,
+  onOpenChange,
+  children,
+  className,
+  action,
+}: CollapsibleSectionProps) {
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const handleChange = (v: boolean) => {
+    if (isControlled) onOpenChange?.(v);
+    else setInternalOpen(v);
+  };
 
   return (
     <Collapsible
       open={isOpen}
-      onOpenChange={setIsOpen}
+      onOpenChange={handleChange}
       className={cn("w-full rounded-2xl overflow-hidden", className)}
       style={{
         background: 'rgba(255,255,255,0.30)',

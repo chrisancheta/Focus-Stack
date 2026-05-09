@@ -161,6 +161,9 @@ interface PriorityCardProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   showMoveControls?: boolean;
+  /** Controlled expansion for "Why this?" — supply alongside onToggleExpand */
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 export function PriorityCard({
@@ -175,14 +178,24 @@ export function PriorityCard({
   onMoveUp,
   onMoveDown,
   showMoveControls,
+  isExpanded,
+  onToggleExpand,
 }: PriorityCardProps) {
   const isCompleted = priority.status === 'completed';
   const isCarryover = !!priority.isCarryover && !isCompleted;
 
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteValue, setNoteValue] = useState(priority.notes ?? '');
-  const [whyOpen, setWhyOpen] = useState(false);
+  const [internalWhyOpen, setInternalWhyOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Controlled when onToggleExpand is provided, uncontrolled otherwise
+  const isControlled = onToggleExpand !== undefined;
+  const whyOpen = isControlled ? (isExpanded ?? false) : internalWhyOpen;
+  const toggleWhy = () => {
+    if (isControlled) onToggleExpand?.();
+    else setInternalWhyOpen(w => !w);
+  };
 
   const tier     = getTierConfig(priority.bucket, isCarryover, isCompleted);
   const quadrant = getQuadrant(priority.importanceScore, priority.urgencyScore);
@@ -455,7 +468,7 @@ export function PriorityCard({
             {/* Right: Why this? + complete */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setWhyOpen(w => !w)}
+                onClick={toggleWhy}
                 className="flex items-center gap-0.5 text-[11px] text-[#222527]/40 hover:text-[#222527]/65 transition-colors"
               >
                 <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', whyOpen && 'rotate-180')} />
