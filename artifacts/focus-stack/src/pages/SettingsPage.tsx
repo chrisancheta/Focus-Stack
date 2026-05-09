@@ -274,7 +274,7 @@ export default function SettingsPage() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-2 pb-10">
+    <div className="space-y-2 pb-3">
 
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <div className="px-1 pb-1">

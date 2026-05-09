@@ -5,7 +5,7 @@ export default function WelcomePage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[100dvh] px-4">
       <div
-        className="w-full max-w-[520px] rounded-3xl p-10 text-center"
+        className="w-full max-w-[520px] rounded-3xl p-8 text-center"
         style={{
           background: 'rgba(255,255,255,0.50)',
           backdropFilter: 'blur(24px)',
