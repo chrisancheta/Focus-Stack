@@ -56,7 +56,7 @@ export default function SetupPage() {
         }}
       >
         <h1 className="text-xl font-semibold text-[#222527] tracking-tight mb-1">Quick Setup</h1>
-        <p className="text-sm text-[#222527]/50 mb-7">You can change this later.</p>
+        <p className="text-sm text-[#222527]/50 mb-7">Choose a few defaults to get started.</p>
 
         <div className="space-y-5">
           <div className="space-y-1.5">
@@ -119,7 +119,7 @@ export default function SetupPage() {
             style={GLASS_INPUT}
           >
             <div>
-              <p className="text-sm font-medium text-[#222527]">Carryover incomplete items</p>
+              <p className="text-sm font-medium text-[#222527]">Carry over unfinished items</p>
               <p className="text-xs text-[#222527]/45 mt-0.5">Move unfinished tasks to tomorrow</p>
             </div>
             <Switch
@@ -137,7 +137,7 @@ export default function SetupPage() {
             style={{ background: '#222527' }}
             data-testid="button-continue-setup"
           >
-            Continue to Focus Stack
+            Start planning
           </button>
           <button
             onClick={handleLoadDemo}
@@ -148,7 +148,7 @@ export default function SetupPage() {
             }}
             data-testid="button-load-demo"
           >
-            Load Demo Data
+            View sample day
           </button>
         </div>
       </div>
