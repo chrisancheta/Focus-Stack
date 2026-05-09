@@ -156,7 +156,7 @@ function buildRecommendations(data: {
   if (avgDailyLoad > 5.5 || highLoadDays >= 2) {
     recs.push({
       id: 'overplanning', IconComp: Layers,
-      title: `Cut the list — ${avgDailyLoad.toFixed(1)} tasks/day is too many`,
+      title: `Cut the list — ${avgDailyLoad.toFixed(1)} activities/day is too many`,
       body: `Heavy days end in carryover, not completion. The gap between bars shows exactly where this hurts.`,
       action: `Max 5 per day. Move the rest to "Could do" and only promote when you finish early.`,
       severity: 'warning',
@@ -168,7 +168,7 @@ function buildRecommendations(data: {
     recs.push({
       id: 'carryover', IconComp: RotateCcw,
       title: `Stop adding. Clear ${carryoverCount} carryovers first.`,
-      body: `Below 70% means tasks pile up faster than you resolve them. Adding more makes this worse.`,
+      body: `Below 70% means activities pile up faster than you resolve them. Adding more makes this worse.`,
       action: `For each carryover: do it now, set a real date, or drop it. Don't carry it again.`,
       severity: 'warning',
     });
@@ -176,7 +176,7 @@ function buildRecommendations(data: {
     recs.push({
       id: 'carryover-mild', IconComp: RotateCcw,
       title: `Clear carryover first — ${completionPct}% rate`,
-      body: `${carryoverCount} task${carryoverCount > 1 ? 's' : ''} deferred at below-average completion. Don't add more until these are handled.`,
+      body: `${carryoverCount} activit${carryoverCount > 1 ? 'ies' : 'y'} deferred at below-average completion. Don't add more until these are handled.`,
       action: `Each carryover: do it, set a concrete date, or drop it. This week, not "later."`,
       severity: 'info',
     });
@@ -198,8 +198,8 @@ function buildRecommendations(data: {
     recs.push({
       id: 'undercapacity', IconComp: TrendingUp,
       title: `You have headroom — raise the bar`,
-      body: `${completionPct}% on ${avgDailyLoad.toFixed(1)} tasks/day means higher-value work is sitting undone.`,
-      action: `Add 1–2 harder tasks next week. You're completing everything — use that.`,
+      body: `${completionPct}% on ${avgDailyLoad.toFixed(1)} activities/day means higher-value work is sitting undone.`,
+      action: `Add 1–2 harder activities next week. You're completing everything — use that.`,
       severity: 'positive',
     });
   }
@@ -210,7 +210,7 @@ function buildRecommendations(data: {
       id: 'low-completion', IconComp: Activity,
       title: `Momentum problem — ${completionPct}% on a reasonable list`,
       body: `${totalPlanned} planned, ${totalCompleted} done. List size isn't the issue — execution is.`,
-      action: `Name your #1 task first thing. Finish it before you open anything else.`,
+      action: `Name your #1 activity first thing. Finish it before you open anything else.`,
       severity: 'warning',
     });
   }
@@ -230,7 +230,7 @@ function buildRecommendations(data: {
   if (recs.length === 0 && (totalPlanned > 0 || streak > 0)) {
     recs.push({
       id: 'default', IconComp: Target,
-      title: 'Commit to your top task first',
+      title: 'Commit to your top activity first',
       body: `Pick 3–5 priorities, then clear the top one before anything else. That habit compounds faster than any other.`,
       action: 'Tomorrow: name your #1 before opening any messages. Protect the first hour.',
       severity: 'info',
@@ -562,7 +562,7 @@ export default function TrendsPage() {
           sub={
             carryoverCount === 0
               ? 'Clear'
-              : carryoverCount === 1 ? '1 task deferred' : `${carryoverCount} deferred`
+              : carryoverCount === 1 ? '1 activity deferred' : `${carryoverCount} deferred`
           }
           accent={carryoverAccent}
         />
@@ -576,7 +576,7 @@ export default function TrendsPage() {
               Weekly Completion
             </p>
             <p className="text-xs text-[#222527]/45">
-              {weekLabel(weekOffset).toLowerCase()} · avg {avgDailyLoad > 0 ? avgDailyLoad.toFixed(1) : '0'} tasks/day
+              {weekLabel(weekOffset).toLowerCase()} · avg {avgDailyLoad > 0 ? avgDailyLoad.toFixed(1) : '0'} activities/day
             </p>
           </div>
           {totalPlanned > 0 && (

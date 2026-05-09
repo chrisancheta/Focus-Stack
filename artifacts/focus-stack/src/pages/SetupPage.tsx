@@ -120,7 +120,7 @@ export default function SetupPage() {
           >
             <div>
               <p className="text-sm font-medium text-[#222527]">Carry over unfinished items</p>
-              <p className="text-xs text-[#222527]/45 mt-0.5">Move unfinished tasks to tomorrow</p>
+              <p className="text-xs text-[#222527]/45 mt-0.5">Move unfinished activities to tomorrow</p>
             </div>
             <Switch
               checked={carryover}

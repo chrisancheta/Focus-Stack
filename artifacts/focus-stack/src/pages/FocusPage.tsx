@@ -192,7 +192,7 @@ export default function FocusPage() {
                 <button
                   onClick={() => linkPriority(null)}
                   className="p-1 rounded-lg text-[#222527]/28 hover:text-[#222527]/55 transition-colors"
-                  title="Detach task"
+                  title="Detach activity"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -225,7 +225,7 @@ export default function FocusPage() {
                   onClick={() => setShowPicker(true)}
                   className="text-[10px] text-[#222527]/32 hover:text-[#222527]/56 transition-colors"
                 >
-                  Switch task →
+                  Switch activity →
                 </button>
               </div>
             )}
@@ -341,7 +341,7 @@ export default function FocusPage() {
           >
             <div className="flex items-center justify-between px-4 pt-3 pb-1.5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#222527]/40">
-                Choose a task
+                Choose an activity
               </p>
               <button
                 onClick={() => setShowPicker(false)}
@@ -381,7 +381,7 @@ export default function FocusPage() {
               {offPlanPriorities.length > 0 && (
                 <>
                   <p className="px-4 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-[#222527]/28">
-                    {todayActivePriorities.length > 0 ? 'Other tasks' : 'All tasks'}
+                    {todayActivePriorities.length > 0 ? 'Other activities' : 'All activities'}
                   </p>
                   {offPlanPriorities.map(p => (
                     <button
@@ -401,7 +401,7 @@ export default function FocusPage() {
               )}
               {activePriorities.length === 0 && (
                 <div className="px-4 py-4 text-center">
-                  <p className="text-sm text-[#222527]/50">No active tasks yet.</p>
+                  <p className="text-sm text-[#222527]/50">No active activities yet.</p>
                   <p className="text-xs text-[#222527]/35 mt-0.5">
                     Add priorities on the Eisenhower screen.
                   </p>

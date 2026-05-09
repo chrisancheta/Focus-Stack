@@ -98,7 +98,7 @@ export function WeeklyBarChart({ data, todayIndex }: WeeklyBarChartProps) {
           style={{ background: 'rgba(107,143,110,0.25)', border: '1px solid rgba(107,143,110,0.30)' }}
         />
         <span className="text-[10px] text-[#222527]/50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-          Ideal range (3–5 tasks/day)
+          Ideal range (3–5 activities/day)
         </span>
       </div>
 

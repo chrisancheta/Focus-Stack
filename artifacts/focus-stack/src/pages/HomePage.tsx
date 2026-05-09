@@ -408,7 +408,7 @@ export default function HomePage() {
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-amber-800/80 mb-0.5">Looks similar to an existing task</p>
+          <p className="text-xs font-semibold text-amber-800/80 mb-0.5">Looks similar to an existing activity</p>
           <p className="text-xs text-amber-700/70 truncate">
             Existing: <span className="font-medium">"{pendingAdd.match.title}"</span>
           </p>
@@ -423,7 +423,7 @@ export default function HomePage() {
           className="flex-1 h-8 rounded-xl text-xs font-semibold transition-all hover:opacity-80"
           style={{ background: 'rgba(200,155,0,0.15)', color: '#92700a', border: '1px solid rgba(200,155,0,0.28)' }}
         >
-          Use existing task
+          Use existing activity
         </button>
         <button
           onClick={handleDedupKeepBoth}
@@ -633,7 +633,7 @@ export default function HomePage() {
               <p className="text-[11px] text-[#222527]/34">
                 {completedPriorities.length > 0
                   ? `${completedPriorities.length} done · ${activePriorities.length} left · ${checkInTimeStr}`
-                  : `${activePriorities.length} tasks · check-in ${checkInTimeStr}`
+                  : `${activePriorities.length} activities · check-in ${checkInTimeStr}`
                 }
               </p>
               {todayPlan && (
@@ -671,7 +671,7 @@ export default function HomePage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-[#222527] tracking-tight mb-1">Today is open</h2>
-                <p className="text-sm text-[#222527]/50">No tasks scheduled. Space to think.</p>
+                <p className="text-sm text-[#222527]/50">No activities scheduled. Space to think.</p>
               </div>
               <span
                 className="shrink-0 text-xs font-semibold px-3 py-1 rounded-full"
@@ -684,7 +684,7 @@ export default function HomePage() {
               onClick={handleCancelZeroDay}
               className="mt-5 text-xs text-[#222527]/40 hover:text-[#222527]/70 transition-colors underline-offset-2 hover:underline"
             >
-              Add tasks instead
+              Add activities instead
             </button>
           </div>
 
@@ -720,7 +720,7 @@ export default function HomePage() {
                 />
                 <div className="flex items-center justify-between mt-2">
                   <p className="text-[11px] text-[#222527]/32">
-                    Press Enter to add · 3–5 tasks recommended
+                    Press Enter to add · 3–5 activities recommended
                   </p>
                   <button
                     type="submit"
@@ -823,8 +823,8 @@ export default function HomePage() {
                   {activePriorities.length < 3
                     ? `${activePriorities.length} added · aim for 3–5`
                     : activePriorities.length <= 5
-                      ? `${activePriorities.length} tasks · looking good`
-                      : `${activePriorities.length} tasks · consider trimming to 5`}
+                      ? `${activePriorities.length} activities · looking good`
+                      : `${activePriorities.length} activities · consider trimming to 5`}
                 </p>
                 <div className="flex items-center gap-0.5">
                   {Array.from({ length: 5 }).map((_, i) => (

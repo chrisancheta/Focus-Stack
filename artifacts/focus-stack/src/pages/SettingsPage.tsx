@@ -247,7 +247,7 @@ export default function SettingsPage() {
   const handleClear = () => {
     clearData();
     setShowClearConfirm(false);
-    toast({ title: 'History cleared', description: 'Completed tasks and session history removed.' });
+    toast({ title: 'History cleared', description: 'Completed activities and session history removed.' });
   };
   const handleReset = () => {
     resetApp();
@@ -291,7 +291,7 @@ export default function SettingsPage() {
       >
         {/* Intro — one tight sentence */}
         <p className="text-[11px] text-[#222527]/50 leading-snug mt-3 mb-3">
-          Rates your tasks by combining importance × urgency into a ranked label. Adjust the split to favour strategic depth or deadline response.
+          Rates your activities by combining importance × urgency into a ranked label. Adjust the split to favour strategic depth or deadline response.
         </p>
 
         {/* Weight bar */}
@@ -437,7 +437,7 @@ export default function SettingsPage() {
             />
           </Row>
 
-          <Row label="Ask about recurring tasks" hint="Prompted at the start of each day">
+          <Row label="Ask about recurring activities" hint="Prompted at the start of each day">
             <Switch
               checked={s.recurringPromptEnabled}
               onCheckedChange={v => set('recurringPromptEnabled', v)}
@@ -571,7 +571,7 @@ export default function SettingsPage() {
         onClose={() => setShowClearConfirm(false)}
         onConfirm={handleClear}
         title="Clear local data?"
-        description="This removes all completed priorities, day plans, and trend history. Active tasks are kept."
+        description="This removes all completed priorities, day plans, and trend history. Active activities are kept."
         confirmText="Clear data"
       />
       <ConfirmModal
@@ -579,7 +579,7 @@ export default function SettingsPage() {
         onClose={() => setShowResetConfirm(false)}
         onConfirm={handleReset}
         title="Reset completely?"
-        description="All tasks, sessions, settings, and history will be permanently deleted. This cannot be undone."
+        description="All activities, sessions, settings, and history will be permanently deleted. This cannot be undone."
         confirmText="Reset Focus Stack"
       />
     </div>

@@ -49,7 +49,7 @@ const BUCKET_DOT: Record<string, string> = {
 const REFLECTION_CHOICES = [
   { id: 'interrupted', label: 'Got interrupted' },
   { id: 'time',        label: 'Ran out of time' },
-  { id: 'unclear',     label: 'Tasks felt unclear' },
+  { id: 'unclear',     label: 'Activities felt unclear' },
   { id: 'energy',      label: 'Low energy' },
   { id: 'shifted',     label: 'Priorities shifted' },
   { id: 'smooth',      label: 'Smooth day ✓' },
@@ -98,8 +98,8 @@ function computeStreak(dayPlans: DayPlan[] | undefined): number {
 }
 
 function getMicroInsight(doneCount: number, total: number, deferredHighImpact: number): string {
-  if (deferredHighImpact >= 2)      return `${deferredHighImpact} high-impact tasks moved to tomorrow. Tackle the hardest one first.`;
-  if (deferredHighImpact === 1)     return 'One high-impact task moved forward. Starting your day with it builds momentum.';
+  if (deferredHighImpact >= 2)      return `${deferredHighImpact} high-impact activities moved to tomorrow. Tackle the hardest one first.`;
+  if (deferredHighImpact === 1)     return 'One high-impact activity moved forward. Starting your day with it builds momentum.';
   if (total > 0 && doneCount === total) return 'Perfect execution. You\'re building real momentum — keep it going.';
   if (total > 0 && doneCount / total >= 0.75) return 'Strong day. Small planning tweaks will get you to 100%.';
   if (doneCount === 0 && total > 0) return 'Rough day? That happens. Reflection like this is what consistent people do.';
@@ -339,7 +339,7 @@ export function CheckInModal({ isOpen, onClose, priorities, dayPlans, onSave }: 
                       {/* Drop */}
                       <button
                         onClick={() => { set(p.id, 'drop'); setSchedulingFor(null); }}
-                        title="Drop this task"
+                        title="Drop this activity"
                         className="h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95"
                         style={action === 'drop'
                           ? { background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.32)', color: 'rgba(220,38,38,0.80)' }
@@ -402,7 +402,7 @@ export function CheckInModal({ isOpen, onClose, priorities, dayPlans, onSave }: 
                         <div className="flex items-center gap-1.5 pt-2.5">
                           <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
                           <p className="text-[11px] text-amber-700/65">
-                            Unscheduled tasks are less likely to be completed
+                            Unscheduled activities are less likely to be completed
                           </p>
                         </div>
                       ) : (
@@ -442,11 +442,11 @@ export function CheckInModal({ isOpen, onClose, priorities, dayPlans, onSave }: 
           <div className="px-5 pt-3 pb-5 shrink-0">
             {schedulingFor ? (
               <p className="text-center text-[11px] text-[#222527]/35 mb-2.5">
-                Schedule or skip the open task above
+                Schedule or skip the open activity above
               </p>
             ) : !allDecided && total > 0 ? (
               <p className="text-center text-[11px] text-[#222527]/35 mb-2.5">
-                Decide each task to continue
+                Decide each activity to continue
               </p>
             ) : null}
 
