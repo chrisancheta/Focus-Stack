@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Timer, BarChart2, Settings, MoreHorizontal, Maximize2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { LayoutDashboard, Timer, BarChart2, Settings, MoreHorizontal, Maximize2, Menu } from 'lucide-react';
 import { useTimer } from '@/lib/timerContext';
 import { useAppStore } from '@/lib/storeContext';
 import { useWindowMode, WindowMode } from '@/lib/windowMode';
@@ -11,23 +10,23 @@ export function TopNav({ effectiveMode }: { effectiveMode: WindowMode }) {
   const { isRunning, isDone, linkedPriorityId } = useTimer();
   const { state } = useAppStore();
   const { setMode } = useWindowMode();
-  const [overflowOpen, setOverflowOpen] = useState(false);
-  const overflowRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const linked = linkedPriorityId
     ? state.priorities.find(p => p.id === linkedPriorityId)
     : null;
 
   useEffect(() => {
-    if (!overflowOpen) return;
+    if (!menuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
-        setOverflowOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [overflowOpen]);
+  }, [menuOpen]);
 
   const timerDot =
     isRunning ? '#5a7d5d' :
@@ -46,11 +45,7 @@ export function TopNav({ effectiveMode }: { effectiveMode: WindowMode }) {
     { href: '/settings', label: 'Settings',   Icon: Settings        },
   ];
 
-  const overflowItems = [
-    { href: '/focus',    label: 'Pomodoro',  Icon: Timer     },
-    { href: '/trends',   label: 'Trends',    Icon: BarChart2 },
-    { href: '/settings', label: 'Settings',  Icon: Settings  },
-  ];
+  const timerRunningOffPage = isRunning && !isDone && location !== '/focus';
 
   // ── ACTIVE MODE: compact single-row header ──────────────────────────────────
   if (effectiveMode === 'active') {
@@ -107,9 +102,9 @@ export function TopNav({ effectiveMode }: { effectiveMode: WindowMode }) {
         )}
 
         {/* Overflow menu */}
-        <div style={{ position: 'relative', flexShrink: 0 }} ref={overflowRef}>
+        <div style={{ position: 'relative', flexShrink: 0 }} ref={menuRef}>
           <button
-            onClick={() => setOverflowOpen(o => !o)}
+            onClick={() => setMenuOpen(o => !o)}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 26, height: 26, borderRadius: 8,
@@ -121,33 +116,18 @@ export function TopNav({ effectiveMode }: { effectiveMode: WindowMode }) {
             <MoreHorizontal style={{ width: 14, height: 14 }} />
           </button>
 
-          {overflowOpen && (
-            <div
-              style={{
-                position: 'absolute', top: '100%', right: 0, marginTop: 6,
-                background: 'rgba(246,249,246,0.98)',
-                borderRadius: 14,
-                border: '1px solid rgba(255,255,255,0.85)',
-                boxShadow: '0 10px 28px rgba(34,37,39,0.16)',
-                overflow: 'hidden', zIndex: 50, width: 148,
-              }}
-            >
-              {overflowItems.map(({ href, label, Icon }) => (
-                <Link
+          {menuOpen && (
+            <div style={DROPDOWN_STYLE}>
+              {navItems.map(({ href, label, Icon }) => (
+                <NavDropdownItem
                   key={href}
                   href={href}
-                  onClick={() => setOverflowOpen(false)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 9,
-                    padding: '9px 14px', fontSize: 13,
-                    color: location === href ? '#222527' : 'rgba(34,37,39,0.60)',
-                    fontWeight: location === href ? 600 : 400,
-                    textDecoration: 'none',
-                  }}
-                >
-                  <Icon style={{ width: 13, height: 13, opacity: 0.55, flexShrink: 0 }} />
-                  {label}
-                </Link>
+                  label={label}
+                  Icon={Icon}
+                  isActive={location === href}
+                  showDot={href === '/focus' && timerRunningOffPage}
+                  onClick={() => setMenuOpen(false)}
+                />
               ))}
             </div>
           )}
@@ -175,7 +155,7 @@ export function TopNav({ effectiveMode }: { effectiveMode: WindowMode }) {
     );
   }
 
-  // ── PLANNING / EXPANDED MODE: full nav ──────────────────────────────────────
+  // ── PLANNING / EXPANDED MODE: logo + hamburger ──────────────────────────────
   return (
     <nav
       style={{
@@ -202,38 +182,109 @@ export function TopNav({ effectiveMode }: { effectiveMode: WindowMode }) {
           />
         </div>
 
-        {/* Nav tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {navItems.map(({ href, label, Icon }) => {
-            const isActive = location === href || (location === '/home' && href === '/home');
-            const showDot  = href === '/focus' && isRunning && !isDone && location !== '/focus';
+        {/* Hamburger */}
+        <div style={{ position: 'relative' }} ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 32, height: 32, borderRadius: 10,
+              color: menuOpen ? '#222527' : 'rgba(34,37,39,0.48)',
+              background: menuOpen ? 'rgba(34,37,39,0.07)' : 'transparent',
+              border: menuOpen ? '1px solid rgba(34,37,39,0.10)' : '1px solid transparent',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              position: 'relative',
+            }}
+            title="Menu"
+            aria-label="Open navigation menu"
+          >
+            <Menu style={{ width: 16, height: 16 }} />
+            {/* Timer running dot */}
+            {timerRunningOffPage && (
+              <span style={{
+                position: 'absolute', top: 4, right: 4,
+                width: 6, height: 6, borderRadius: '50%',
+                background: '#5a7d5d',
+                boxShadow: '0 0 4px rgba(90,125,93,0.60)',
+              }} />
+            )}
+          </button>
 
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'relative flex items-center gap-1 px-2 py-1.5 rounded-full transition-all',
-                  isActive
-                    ? 'bg-[#222527] text-white'
-                    : 'text-[#222527]/55 hover:text-[#222527] hover:bg-white/40',
-                )}
-                style={{ fontSize: 11, fontWeight: 500 }}
-                data-testid={`nav-${label.toLowerCase()}`}
-              >
-                <Icon className="h-3 w-3" />
-                <span>{label}</span>
-                {showDot && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                    <span className="animate-ping absolute h-full w-full rounded-full bg-[#6B8F6E] opacity-70" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#6B8F6E]" />
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+          {menuOpen && (
+            <div style={{ ...DROPDOWN_STYLE, minWidth: 172 }}>
+              {navItems.map(({ href, label, Icon }) => (
+                <NavDropdownItem
+                  key={href}
+                  href={href}
+                  label={label}
+                  Icon={Icon}
+                  isActive={location === href}
+                  showDot={href === '/focus' && timerRunningOffPage}
+                  onClick={() => setMenuOpen(false)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </nav>
+  );
+}
+
+// ── Shared dropdown styles ──────────────────────────────────────────────────────
+
+const DROPDOWN_STYLE: React.CSSProperties = {
+  position: 'absolute', top: '100%', right: 0, marginTop: 6,
+  background: 'rgba(246,249,246,0.98)',
+  borderRadius: 14,
+  border: '1px solid rgba(255,255,255,0.85)',
+  boxShadow: '0 10px 28px rgba(34,37,39,0.16)',
+  overflow: 'hidden', zIndex: 50,
+};
+
+function NavDropdownItem({
+  href, label, Icon, isActive, showDot, onClick,
+}: {
+  href: string;
+  label: string;
+  Icon: React.ElementType;
+  isActive: boolean;
+  showDot: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '10px 16px', fontSize: 13,
+        color: isActive ? '#222527' : 'rgba(34,37,39,0.58)',
+        fontWeight: isActive ? 600 : 400,
+        textDecoration: 'none',
+        position: 'relative',
+      }}
+    >
+      <span style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <Icon style={{ width: 14, height: 14, opacity: isActive ? 0.80 : 0.50, flexShrink: 0 }} />
+        {showDot && (
+          <span style={{
+            position: 'absolute', top: -2, right: -3,
+            width: 5, height: 5, borderRadius: '50%',
+            background: '#5a7d5d',
+          }} />
+        )}
+      </span>
+      {label}
+      {isActive && (
+        <span style={{
+          marginLeft: 'auto',
+          width: 5, height: 5, borderRadius: '50%',
+          background: 'rgba(34,37,39,0.22)',
+          flexShrink: 0,
+        }} />
+      )}
+    </Link>
   );
 }
