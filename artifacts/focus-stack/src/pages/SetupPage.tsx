@@ -46,7 +46,7 @@ export default function SetupPage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[100dvh] px-4 py-10">
       <div
-        className="w-full max-w-md rounded-3xl p-8"
+        className="w-full max-w-[520px] rounded-3xl p-8"
         style={{
           background: 'rgba(255,255,255,0.50)',
           backdropFilter: 'blur(24px)',

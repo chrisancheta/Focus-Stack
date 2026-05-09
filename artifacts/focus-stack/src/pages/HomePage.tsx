@@ -697,7 +697,7 @@ export default function HomePage() {
                   Start your day with clarity
                 </h2>
                 <p className="text-sm text-[#222527]/52 leading-relaxed">
-                  Add what's on your plate. We'll rank it by urgency and importance so you always know what to do first.
+                  Add what's on your plate — ranked by urgency and importance so you always know what to do first.
                 </p>
               </div>
 
@@ -801,9 +801,9 @@ export default function HomePage() {
                 <div className="w-1.5 h-1.5 rounded-full bg-red-400/80 shrink-0" />
                 <p className="text-xs text-[#222527]/60 flex-1">
                   <span className="font-semibold text-[#222527]/70">
-                    {carryoverPriorities.length} {carryoverPriorities.length === 1 ? 'item' : 'items'} carrying over
+                    {carryoverPriorities.length} {carryoverPriorities.length === 1 ? 'item' : 'items'} from yesterday
                   </span>
-                  {' '}from a previous day — add them above to reprioritize.
+                  {' '}— add them above to reprioritize.
                 </p>
               </div>
             )}

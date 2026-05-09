@@ -95,9 +95,9 @@ export { CheckInTrigger };
 
 const PANEL_WIDTHS: Record<WindowMode, number> = {
   mini:     296,
-  active:   376,
-  planning: 456,
-  expanded: 560,
+  active:   432,
+  planning: 524,
+  expanded: 640,
 };
 
 const DESKTOP_BG =
