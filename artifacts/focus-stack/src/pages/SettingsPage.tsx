@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import { useAppStore } from '@/lib/storeContext';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -230,6 +231,7 @@ const DEFAULT_SETTINGS = {
 export default function SettingsPage() {
   const { state, updateSettings, clearData, resetApp } = useAppStore();
   const { toast }  = useToast();
+  const [, setLocation] = useLocation();
 
   const [openSection,      setOpenSection]      = useState<Section | null>(null);
   const [showPreview,      setShowPreview]       = useState(false);
@@ -250,7 +252,7 @@ export default function SettingsPage() {
   const handleReset = () => {
     resetApp();
     setShowResetConfirm(false);
-    window.location.reload();
+    setLocation('/welcome');
   };
 
   // ── Collapsed summaries ──────────────────────────────────────────────────────
