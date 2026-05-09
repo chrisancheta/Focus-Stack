@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Timer, BarChart2, Settings, MoreHorizontal, Maximize2, Menu } from 'lucide-react';
+import { LayoutDashboard, Timer, BarChart2, Settings, MoreHorizontal, Menu } from 'lucide-react';
 import { useTimer } from '@/lib/timerContext';
 import { useAppStore } from '@/lib/storeContext';
 import { useWindowMode, WindowMode } from '@/lib/windowMode';
@@ -133,24 +133,6 @@ export function TopNav({ effectiveMode }: { effectiveMode: WindowMode }) {
           )}
         </div>
 
-        {/* Expand button */}
-        <button
-          onClick={() => setMode('planning')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '4px 9px', borderRadius: 99,
-            fontSize: 10, fontWeight: 600,
-            background: 'rgba(34,37,39,0.07)', color: 'rgba(34,37,39,0.46)',
-            border: '1px solid rgba(34,37,39,0.09)',
-            flexShrink: 0, cursor: 'pointer',
-            transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.75')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        >
-          <Maximize2 style={{ width: 10, height: 10 }} />
-          Expand
-        </button>
       </div>
     );
   }
